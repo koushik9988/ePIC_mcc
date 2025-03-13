@@ -91,37 +91,37 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 - **Chargedensity_plot**: Flag for plotting charge density.
 - **phase_plot**: Flag for plotting phase space.
 - **species_index**: Index of species for phase plot.
-- **dft_rho**: Flag for performing discrete Fourier transform of density.
+- **dft_rho**: Flag for plotting Fourier transformed charge density.
 
 ## `[domain]`
 
 - **NC**: Number of cells in the domain.
-- **x0**: Initial position of the domain.
+- **x0**: origin coordinate of the domain.
 
 ## `[normalization]`
 
 - **norm_scheme**: Normalization scheme.
 - **vel_norm_scheme**: Velocity normalization scheme.
-- **lenght_scale**: Length scale for normalization.
-- **time_scale**: Time scale for normalization (`omegape`).
-- **energy_scale**: Energy scale for normalization.
+- **lenght_scale**: User defined Length scale for normalization.
+- **time_scale**: User defined Time scale for normalization (`omegape`).
+- **energy_scale**: User defined Energy scale for normalization.
 
 ## `[simulation]`
 
-- **shapefunction**: Shape function for particle interpolation (e.g., `CIC`).
+- **shapefunction**: Shape function for particle interpolation (e.g., 'NGP', `CIC`).
 - **push_parallal**: Boolean flag for parallel particle pushing.
 - **deposit_parallal**: Boolean flag for parallel charge deposition.
 - **density**: Plasma density.
 - **bc**: Boundary condition:
   - `pbc`: Periodic boundary condition.
   - `open`: Open boundary condition.
-- **see_rate**: Secondary electron emission rate.
-- **tempwall**: Temperature at the wall.
-- **ionfixed**: Flag for fixed ions background.
+- **see_rate**: Secondary electron emission rate.(Not Implemented)
+- **tempwall**: Temperature at the wall.(Not Implemented)
+- **ionfixed**: Flag for fixed ions  in the background.(1 for fixed ion background )
 
 ## `[solver]`
 
-- **solvertype**: Type of solver (`direct`).
+- **solvertype**: Type of solver (`direct`, 'pcg').
 - **tolerance**: Solver tolerance.
 - **max_iteration**: Maximum number of solver iterations.
 
@@ -130,7 +130,7 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 - **elastic**: Boolean flag for elastic collisions.
 - **excitation**: Boolean flag for excitation collisions.
 - **ionization**: Boolean flag for ionization collisions.
-- **GAS_DENSITY**: Gas density in the simulation (`1e20`).
+- **GAS_DENSITY**: Neureal Gas density (`1e20`).
 
 ## `[species]`
 
