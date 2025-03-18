@@ -22,12 +22,12 @@ This repository contains an electrostatic 1D Particle-in-Cell (PIC) code develop
 ### Installation
 1. Clone the repository:
     ```bash
-    git clone https://github.com/koushik9988/particle-in-cell.git
+    git clone https://github.com/koushik9988/ePIC_mcc.git
     ```
 
 2. Navigate to the directory:
     ```bash
-    cd your_repository
+    cd ePIC_mcc
     ```
 
 3. Build the code using cmake:
