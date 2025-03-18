@@ -4,10 +4,9 @@ This repository contains an electrostatic 1D Particle-in-Cell (PIC) code develop
 
 
 <p align="center">
-  <img src="https://github.com/koushik9988/particle-in-cell/assets/55924787/5d278d78-2755-4293-bf18-4f8a09789b8c" width="45%">
-  <img src="https://github.com/user-attachments/assets/1cbc78c4-6244-4015-a1a3-4aa8835ac5db" width="45%">
+  <img src="https://github.com/koushik9988/particle-in-cell/assets/55924787/5d278d78-2755-4293-bf18-4f8a09789b8c" height="300">
+  <img src="https://github.com/user-attachments/assets/1cbc78c4-6244-4015-a1a3-4aa8835ac5db" height="300">
 </p>
-
 
 
 ## Requirements
