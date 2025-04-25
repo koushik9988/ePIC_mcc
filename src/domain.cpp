@@ -244,11 +244,11 @@ void Domain::set_normscheme()
         {
             vel_norm = LDe*wpe;
         }
-        if(vel_normscheme == 2)
+        else if(vel_normscheme == 2)
         {
             vel_norm = LDi*wpi;
         }
-        if(vel_normscheme == 3)
+        else if(vel_normscheme == 3)
         {
             vel_norm = IAW_vel;
         }
@@ -266,11 +266,11 @@ void Domain::set_normscheme()
         {
             vel_norm = LDe*wpe;
         }
-        if(vel_normscheme == 2)
+        else if(vel_normscheme == 2)
         {
             vel_norm = LDi*wpi;
         }
-        if(vel_normscheme == 3)
+        else if(vel_normscheme == 3)
         {
             vel_norm = IAW_vel;
         }
