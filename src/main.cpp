@@ -14,8 +14,6 @@
 #include <thread>
 #include <string>
 #include "collision.h"
-#include "dft.h"
-
 
 using namespace std; 
 using namespace display;
@@ -426,12 +424,6 @@ int main( int argc , char *argv[])
         {
             output.diagnostics(ts,species_list);
         }
-
-        dft::dft_result result = dft::dft_1d(domain.rho, domain.dx);
-
-        domain.dft_value  = result.magnitude;
-        domain.dft_k  = result.freq;
-
     }
     
     output.write_ke();
