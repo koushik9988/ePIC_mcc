@@ -111,3 +111,36 @@ std::pair<std::string, int> INIParser::loadtypeextract(const std::string &positi
     // Default case for "random" or "uniform" 
     return {position_init, 0}; 
 }
+
+std::vector<std::pair<int, int>> INIParser::parseCollGroup(const std::string &collGroupStr)
+{
+    std::vector<std::pair<int, int>> pairs;
+    std::vector<std::string> tokens = split(collGroupStr, ',');
+
+    /*
+    ASCII values
+    0 - 48
+    1 - 49
+    2 - 50
+    3 - 51
+    4 - 52
+    so on
+    */
+
+    for (const std::string& token : tokens)
+    {
+        if (token.size() == 2)
+        {  
+            int first = token[0] - '0';  // Convert char to int
+            int second = token[1] - '0';
+            pairs.emplace_back(first, second);
+        }
+        else
+        {
+            std::cerr << "Invalid collision pair token: " << token << std::endl;
+        }
+    }
+
+    return pairs;
+}
+
