@@ -24,6 +24,13 @@ endif()
 # Find Threads
 find_package(Threads REQUIRED)
 
+# Find FFTW3
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(FFTW REQUIRED IMPORTED_TARGET fftw3)
+if(NOT FFTW_FOUND)
+    message(FATAL_ERROR "FFTW3 not found. Please install FFTW3 (e.g., sudo apt install libfftw3-dev)")
+endif()
+
 # Print version information
 message(STATUS "Found Python version: ${Python3_VERSION}")
 message(STATUS "Python executable: ${Python3_EXECUTABLE}")
@@ -31,6 +38,7 @@ message(STATUS "Python include dirs: ${Python3_INCLUDE_DIRS}")
 message(STATUS "NumPy include dirs: ${Python3_NumPy_INCLUDE_DIRS}")
 message(STATUS "Found HDF5 version: ${HDF5_VERSION}")
 message(STATUS "HDF5 include dirs: ${HDF5_INCLUDE_DIRS}")
+message(STATUS "Found FFTW3: ${FFTW_VERSION}")
 
 # Include directories
 include_directories(
@@ -53,6 +61,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${Python3_NumPy_LIBRARIES}
     m
     stdc++
+    PkgConfig::FFTW
 )
 
 # Ensure includes are properly set for the target
