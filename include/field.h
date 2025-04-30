@@ -29,6 +29,7 @@ public:
     void pcgsolver();
     void cgsolver();
     void GaussElim();
+    void Spectral();
 
 private:
     Domain &domain;
