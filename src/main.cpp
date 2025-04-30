@@ -310,7 +310,7 @@ int main( int argc , char *argv[])
     output.phase_plot = phaseplot_flag;
     output.dft_flag = dft_flag;
     output.species_index = species_index;
-    output.write_metadata(NC,NUM_TS,write_interval,write_interval_phase,DT_coeff,den,save_fig,domain.normscheme,
+    output.write_metadata(ni,NUM_TS,write_interval,write_interval_phase,DT_coeff,den,save_fig,domain.normscheme,
         domain.sub_cycle_interval,LDe,LDi,wpe,wpi,species_no,GAS_DENSITY, domain.max_electron_coll_freq);
     output.write_species_metadata(species_list);
 
