@@ -70,6 +70,7 @@ void Output::write_metadata(int NC, int NUM_TS, int write_int, int write_int_pha
 
 void Output::write_species_metadata(std::vector<Species> &species_list)
 {
+    std::vector<std::string> species_order;
     for (Species& sp : species_list)
     {
         std::string species_group_name = sp.name;
@@ -87,9 +88,28 @@ void Output::write_species_metadata(std::vector<Species> &species_list)
         species_group.createAttribute("num_particles", PredType::NATIVE_INT, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_INT, &sp.numparticle);
         species_group.createAttribute("streaming_velocity", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &sp.vs);
 
+        // Add species name to species_order vector
+        species_order.push_back(sp.name);
         // Close the species group after writing the metadata
         species_group.close();
     }
+    // Create an attribute to store the species order as in species_list, use hsize_t array for the dimension
+    hsize_t dims[1] = {species_order.size()};
+    DataSpace order_space(H5S_SIMPLE, dims);
+
+    // Define a variable-length string type for the species names as each species name have diffrent lenght strings
+    StrType str_type(PredType::C_S1, H5T_VARIABLE);
+
+    Attribute order_attr = metadata_species.createAttribute("species_order", str_type, order_space);
+
+    std::vector<const char*> species_name_pointers;
+    for (const auto& name : species_order)
+    {
+        species_name_pointers.push_back(name.c_str());
+    }
+
+    // Write the array of species names as a string array (variable-length strings)
+    order_attr.write(str_type, species_name_pointers.data());
 }
 
 void Output::write_field_data(int ts)
