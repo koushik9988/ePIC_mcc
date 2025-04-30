@@ -4,6 +4,10 @@
 #include <fftw3.h>
 #include <fstream>
 #include "slap.h"
+#include "matplotlibcpp.h"
+
+
+namespace plt = matplotlibcpp;
 
 void SpectralSolver(vec<double> &rho_in, vec<double> &phi_out, int n, double L)
 {
@@ -62,8 +66,8 @@ void SpectralSolver(vec<double> &rho_in, vec<double> &phi_out, int n, double L)
 
 int main()
 {
-    int n = 128;
-    double L = 1.0;
+    int n = 1024;
+    double L = 100.0;
     double dx = L / n;
 
     vec<double> x(n), rho(n), phi(n), phi_exact(n);
@@ -71,18 +75,35 @@ int main()
     for (int i = 0; i < n; ++i)
     {
         x(i) = i * dx;
-        rho(i) = std::sin(2.0 * M_PI * x(i) / L);
-        phi_exact(i) = rho(i) / (4.0 * M_PI * M_PI);  // Exact solution defined upto a consnat c2 = 0 
+        //rho(i) = std::cos(4.0 * M_PI * x(i) / L);//std::sin(2.0 * M_PI * x(i) / L);
+        rho(i) = std::sin(2.0 * M_PI * x(i) / L) + std::cos(4.0 * M_PI * x(i) / L);
+        //phi_exact(i) = (L*L)/(16*M_PI*M_PI) * std::cos(4.0 * M_PI * x(i) / L);//rho(i) / (4.0 * M_PI * M_PI);  // Exact solution defined upto a consnat c2 = 0 
+        phi_exact(i) = (L*L)/(4*M_PI*M_PI) * std::sin(2.0 * M_PI * x(i)/L) + (L*L)/(16*M_PI*M_PI) * std::cos(4.0 * M_PI * x(i) / L);
+
     }
 
     SpectralSolver(rho, phi, n, L);
 
+    std::vector<double> x1(n);
+    std::vector<double> phi_spectral(n);
+    std::vector<double> phi_exact_sol(n);
 
     for (int i = 0; i < n; ++i)
     {
-        std::cout<< x(i) << "\t" << phi(i) << "\t" << phi_exact(i) << "\n";
+        x1[i] = x(i);
+        phi_spectral[i] = phi(i);
+        phi_exact_sol[i] = phi_exact(i);
+
     }
-  
+    
+    //plt::ion();
+    plt::named_plot("spectral", x1, phi_spectral, "r-");
+    plt::named_plot("exact", x1, phi_exact_sol, "b-");
+    plt::legend();
+    plt::xlabel("x");
+    plt::ylabel("$phi$");
+    plt::show();
+
     return 0;
 }
 
