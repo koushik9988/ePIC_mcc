@@ -422,302 +422,349 @@ void Output::write_m()
 
 
 
-// Other includes and code
 
 void Output::diagnostics(int ts, std::vector<Species> &species_list)
 {
     
     if (domain.diagtype == "off")
     {
-        return; // Exit the function if diagnostics are turned off
+        std::cout << "TS: " << ts << std::endl;
+        return;
     }
-    
-    double max_phi = domain.phi(0);
-    double min_phi = max_phi;
-    double total_kinetic_energy = 0.0;
-    double total_px = 0.0;
-    double total_py = 0.0;
-    double total_pz = 0.0;
-    //double unnorm = Const::K_b*domain.tempE/Const::eV;
 
     auto norm_species = (domain.normscheme == 2 || domain.normscheme == 4) ? species_list[1] : species_list[0];
-    double potential_energy;// = domain.ComputePE(norm_species);
-
-    for(int i = 0; i < domain.ni; i++)
+    
+    
+    if(domain.diagtype == "basic")
     {
-        if (domain.phi(i) > max_phi)
+        double max_phi = domain.phi(0);
+        for(int i = 0; i < domain.ni; i++)
         {
-            max_phi = domain.phi(i);
+            if (domain.phi(i) > max_phi)
+            {
+                max_phi = domain.phi(i);
+            }
         }
 
-        if (domain.phi(i) < min_phi)
+        if(domain.SolverType == "direct" || domain.SolverType == "spectral")
         {
-            min_phi = domain.phi(i);
+            std::cout << "TS: " << ts << " \t max_phi: " << std::fixed << std::setprecision(2) << (max_phi - domain.phi(0));
         }
-    }
-
-    if(domain.SolverType == "direct")
-    {
-        std::cout << "TS: " << ts << " \t max_phi: " << std::fixed << std::setprecision(2) << (max_phi - domain.phi(0));
-    }
-    else
-    {
-        std::cout << "TS: " << ts << "\t" << "norm:" << domain.norm << " delta_phi: " << std::fixed << std::setprecision(2) << (max_phi - domain.phi(0));
-    }
-
-    if(domain.bc =="open")
-    {
-        std::cout<<"\t"<<std::fixed << std::setprecision(precision)<<"rhoL|currentL:"<<domain.vL<<"|"<<domain.I_leftwall<<"\t"<<"rhoR|currentR:"<<domain.vR<<"|"<<domain.I_rightwall;
-    }
-
-    if(domain.bc == "open" || domain.enable_ionization_collision  == true)
-    {
-        for (Species& sp : species_list)
+        else
         {
-            std::cout << " n_" << std::setw(4) << sp.name << ":" << sp.part_list.size();
+            std::cout << "TS: " << ts << "\t" << "norm:" << domain.norm << " delta_phi: " << std::fixed << std::setprecision(2) << (max_phi - domain.phi(0));
         }
-    }
 
-    if(domain.normscheme == 5)
-    {
-        std::cout << std::scientific << std::setprecision(precision);
-    }
-    else
-    {
+        if(domain.bc =="open")
+        {
+            std::cout<<"\t"<<std::fixed << std::setprecision(precision)<<"rhoL|currentL:"<<domain.vL<<"|"<<domain.I_leftwall<<"\t"<<"rhoR|currentR:"<<domain.vR<<"|"<<domain.I_rightwall;
+        }
+
+        if(domain.bc == "open" || domain.enable_ionization_collision  == true)
+        {
+            for (Species& sp : species_list)
+            {
+                std::cout << " n_" << std::setw(4) << sp.name << ":" << sp.part_list.size();
+            }
+        }
+
+        if(domain.normscheme == 5)
+        {
+            std::cout << std::scientific << std::setprecision(precision);
+        }
+        else
+        {
         std::cout << std::fixed << std::setprecision(precision);
+        }
+
+        std::cout<<endl;
     }
+
+    if(domain.diagtype == "full")
+    {
+        double max_phi = domain.phi(0);
+        for(int i = 0; i < domain.ni; i++)
+        {
+            if (domain.phi(i) > max_phi)
+            {
+                max_phi = domain.phi(i);
+            }
+        }
+
+        if(domain.SolverType == "direct" || domain.SolverType == "spectral")
+        {
+            std::cout << "TS: " << ts << " \t max_phi: " << std::fixed << std::setprecision(2) << (max_phi - domain.phi(0));
+        }
+        else
+        {
+            std::cout << "TS: " << ts << "\t" << "norm:" << domain.norm << " delta_phi: " << std::fixed << std::setprecision(2) << (max_phi - domain.phi(0));
+        }
+
+        if(domain.bc =="open")
+        {
+            std::cout<<"\t"<<std::fixed << std::setprecision(precision)<<"rhoL|currentL:"<<domain.vL<<"|"<<domain.I_leftwall<<"\t"<<"rhoR|currentR:"<<domain.vR<<"|"<<domain.I_rightwall;
+        }
+
+        if(domain.bc == "open" || domain.enable_ionization_collision  == true)
+        {
+            for (Species& sp : species_list)
+            {
+                std::cout << " n_" << std::setw(4) << sp.name << ":" << sp.part_list.size();
+            }
+        }
+
+        if(domain.normscheme == 5)
+        {
+            std::cout << std::scientific << std::setprecision(precision);
+        }
+        else
+        {
+            std::cout << std::fixed << std::setprecision(precision);
+        }
+
+        double total_kinetic_energy = 0.0;
+        double total_px = 0.0;
+        double total_py = 0.0;
+        double total_pz = 0.0;
+        double potential_energy;
+
+        if ((domain.bc == "pbc" || domain.bc == "rbc") && Energy_plot == 1)
+        {
+            potential_energy = domain.ComputePE(norm_species);
+            for (Species& sp : species_list)
+            {
+                double ke = sp.Compute_KE(norm_species);
+                total_kinetic_energy += ke;
+                std::cout << " KE_" << std::setw(4) << sp.name << ": " << ke;
+            }
+
+            std::cout << " Potential energy: " << potential_energy;
+            std::cout << " Total_energy: " << total_kinetic_energy + potential_energy;
+
+            for (Species& sp : species_list)
+            {
+                //total_momentum += sp.Compute_Momentum(norm_species);
+                auto [px, py, pz] = sp.Compute_Momentum(norm_species);
+                total_px += px;
+                total_py += py;
+                total_pz += pz;
+            }
+            std::cout << " px: " << total_px << " py: " << total_py << " pz: " << total_pz<<" P:"<<sqrt(total_px*total_px + total_py*total_py + total_pz*total_pz);
+            std::cout<< " delta_g:"<<domain.delta_g;
+            
+        }
+        std::cout << std::endl;
+
+        //Plotting with matplotlibcpp
+        static std::vector<double> time;
+        static std::vector<double> lenght;
+        static std::vector<double> ke;
+        static std::vector<double> pe;
+        static std::vector<double> total_energie;
+        static std::vector<double> phi;
+        static std::vector<double> charge_density;
+        static std::vector<double> efield;
+        static std::vector<double> pot;
+        static std::vector<int> num1;
+        static std::vector<int> num2;
+
+        //dft plot
+        static std::vector<double> k;
+        static std::vector<double> rho_k;
+
+        std::vector<double> x;
+        std::vector<double> vx;
+
+        std::vector<double> x1;
+        std::vector<double> vx1;
+
+        time.push_back(ts * domain.DT);
+
+        if (Energy_plot == 1)
+        {
+            ke.push_back(total_kinetic_energy);
+            pe.push_back(potential_energy);
+            total_energie.push_back(total_kinetic_energy + potential_energy);
+        }
+
+        if (domain.bc == "open")
+        {
+            num1.push_back(species_list[0].part_list.size());
+            num2.push_back(species_list[1].part_list.size());
+        }
+
+        if (phase_plot == 1 )
+        {
+            //x.clear();
+            //vx.clear();
+            for(auto &part : species_list[species_index].part_list)
+            {
+                x.push_back(part.x);
+                vx.push_back(part.vx);
+            
+            }
+        }
+
+        if (Chargedensity_plot == 1)
+        {
+            lenght.clear();
+            charge_density.clear(); 
+            for(int i = 0; i <domain.ni ; i++)
+            {
+                lenght.push_back(i*domain.dx);
+                charge_density.push_back(domain.rho(i));
+                //charge_density.push_back(species_list[0].den(i));
+            }   
+        }
+
+        if((Potentialfield_plot == 1 || domain.bc == "open") )
+        {
+            lenght.clear();
+            efield.clear();
+            pot.clear();
+            for(int i = 0; i <domain.ni ; i++)
+            {
+                lenght.push_back(i*domain.dx);
+                efield.push_back(domain.ef(i));
+                pot.push_back(domain.phi(i));
+            }   
+        }
+
+        if(dft_flag == 1 && domain.SolverType == "spectral")
+        {
+            k.clear();
+            rho_k.clear();
+            for(int i = 0; i < (domain.ni/2) +1 ; i++)
+            {
+                k.push_back(domain.dft_k(i));
+                rho_k.push_back(domain.dft_value(i));
+            }
+        }
+
+        plt::ion(); 
+
+        if (Energy_plot == 1 && (domain.bc == "pbc" || domain.bc == "rbc"))
+        {
+            plt::figure(1);
+            plt::clf();
+            if (keflag == 1 && (domain.bc == "pbc" || domain.bc == "rbc") && domain.diagtype == "full")
+            {
+                plt::named_plot("kinetic energy", time, ke, "r-");
+            }
+            if (peflag == 1 && (domain.bc == "pbc" || domain.bc == "rbc") && domain.diagtype == "full")
+            {
+                plt::named_plot("potential energy", time, pe, "b-");
+            }
+            if (teflag == 1 && (domain.bc == "pbc" || domain.bc == "rbc" ) && domain.diagtype == "full")
+            {
+                plt::named_plot("total energy", time, total_energie, "g-");
+            }
+            plt::xlabel("Time");
+            plt::ylabel("Energy");
+            plt::legend();
+        }
+
+
+        double marker_size = 1.0;
+        std::map<std::string, std::string> style_options1 = {{"color", "blue"}, {"marker", "o"}};   
+        std::map<std::string, std::string> style_options2 = {{"color", "red"}, {"marker", "o"}};
+
+        if (phase_plot == 1)
+        {   
+            std::string label1 = species_list[species_index].name ;
+            //std::string label2 = species_list[2].name ;
+
+            std::map<std::string, std::string> scatter_keywords1;
+            scatter_keywords1["label"] = label1;
+            scatter_keywords1["color"] = "black"; // Explicitly set color
+
+            //std::map<std::string, std::string> scatter_keywords2;
+            //scatter_keywords2["label"] = label2;
+            //scatter_keywords2["color"] = "red"; // Explicitly set color
+
+            // Plot the scatter plots
+            plt::figure(2);
+            plt::clf();
+            plt::scatter(x, vx, marker_size, scatter_keywords1);
+            //plt::scatter(x1, vx1, marker_size, scatter_keywords2);
+            plt::xlabel("x");
+            plt::ylabel("v");
+
+            // Create legend keywords map
+            std::map<std::string, std::string> legend_keywords;
+            legend_keywords["loc"] = "upper right"; // Location of the legend
+
+            // Apply legend with location
+            plt::legend(legend_keywords); 
+
+            // Show the plot
+            plt::show(); 
+        }
+
+
+        if (Chargedensity_plot == 1)
+        {   
+            plt::figure(3);
+            plt::clf();
+            plt::named_plot("charge-density", lenght, charge_density, "r-");
+            plt::xlabel("x");
+            plt::ylabel("rho");
+            plt::legend(); 
+        }
+
+        if((Potentialfield_plot == 1 || domain.bc == "open"))
+        {
+            plt::figure(4);
+            plt::clf();
+            plt::named_plot("potential", lenght, pot, "r-");
+            //plt::named_plot("Electricfield", lenght, efield, "b-");
+            plt::xlabel("x");
+            //plt::ylim(min_phi,max_phi);
+            plt::ylabel("phi/Efield");
+            plt::legend(); 
+        }
+
     
-    //
-    if ((domain.bc == "pbc" || domain.bc == "rbc") && domain.diagtype == "full" && Energy_plot == 1)
-    {
-        potential_energy = domain.ComputePE(norm_species);
-        for (Species& sp : species_list)
-        {
-            double ke = sp.Compute_KE(norm_species);
-            total_kinetic_energy += ke;
-            std::cout << " KE_" << std::setw(4) << sp.name << ": " << ke;
+        if(domain.bc == "open")
+        {   
+            plt::figure(5);
+            plt::clf();
+            plt::named_plot("electron", time, num1, "r-");
+            plt::named_plot("ion", time, num2, "b-");
+            //plt::named_plot("Electricfield", lenght, efield, "b-");
+            plt::xlabel("time");
+            plt::ylabel("simulation particle");
+            plt::legend();
+
         }
 
-        std::cout << " Potential energy: " << potential_energy;
-        std::cout << " Total_energy: " << total_kinetic_energy + potential_energy;
+        if(domain.bc == "open")
+        {   
+            plt::figure(6);
+            plt::clf();
+            plt::named_plot("electron", time, num1, "r-");
+            plt::named_plot("ion", time, num2, "b-");
+            //plt::named_plot("Electricfield", lenght, efield, "b-");
+            plt::xlabel("time");
+            plt::ylabel("simulation particle");
+            plt::legend();
 
-        for (Species& sp : species_list)
-        {
-            //total_momentum += sp.Compute_Momentum(norm_species);
-            auto [px, py, pz] = sp.Compute_Momentum(norm_species);
-            total_px += px;
-            total_py += py;
-            total_pz += pz;
         }
-        std::cout << " px: " << total_px << " py: " << total_py << " pz: " << total_pz<<" P:"<<sqrt(total_px*total_px + total_py*total_py + total_pz*total_pz);
-        std::cout<< " delta_g:"<<domain.delta_g;
-        
-    }
-    std::cout << std::endl;
 
-    // Plotting with matplotlibcpp
-    static std::vector<double> time;
-    static std::vector<double> lenght;
-    static std::vector<double> ke;
-    static std::vector<double> pe;
-    static std::vector<double> total_energie;
-    static std::vector<double> phi;
-    static std::vector<double> charge_density;
-    static std::vector<double> efield;
-    static std::vector<double> pot;
-    static std::vector<int> num1;
-    static std::vector<int> num2;
-
-    //dft plot
-    static std::vector<double> k;
-    static std::vector<double> rho_k;
-
-    std::vector<double> x;
-    std::vector<double> vx;
-
-    std::vector<double> x1;
-    std::vector<double> vx1;
-
-    time.push_back(ts * domain.DT);
-
-    if (Energy_plot == 1 && domain.diagtype == "full")
-    {
-        ke.push_back(total_kinetic_energy);
-        pe.push_back(potential_energy);
-        total_energie.push_back(total_kinetic_energy + potential_energy);
-    }
-
-    if (domain.bc == "open" && domain.diagtype == "full")
-    {
-        num1.push_back(species_list[0].part_list.size());
-        num2.push_back(species_list[1].part_list.size());
-    }
-
-    if (phase_plot == 1 && domain.diagtype == "full")
-    {
-        //x.clear();
-        //vx.clear();
-        for(auto &part : species_list[species_index].part_list)
+        if(dft_flag == 1 && domain.SolverType == "spectral")
         {
-            x.push_back(part.x);
-            vx.push_back(part.vx);
-            //x.push_back(part.vel[0]);
-            //vx.push_back(part.vel[1]);
+            plt::figure(7);
+            plt::clf();
+            plt::named_plot("fourier transformed charge density", k, rho_k, "r-");
+            plt::xlabel("k");
+            plt::ylabel("rho_k");
+            plt::legend(); 
         }
-///////////////////////////////////////////////
-        //for(auto &part : species_list[2].part_list)
-        //{
-            //x.push_back(part.x);
-            //vx.push_back(part.vx);
-            //x.push_back(part.vel[0]);
-            //vx.push_back(part.vel[1]);
-        //}
+
+        plt::pause(0.1);
+
+        // Show plot
+        plt::show();
     }
-
-    if (Chargedensity_plot == 1 && domain.diagtype == "full")
-    {
-        lenght.clear();
-        charge_density.clear(); 
-        for(int i = 0; i <domain.ni ; i++)
-        {
-            lenght.push_back(i*domain.dx);
-            charge_density.push_back(domain.rho(i));
-            //charge_density.push_back(species_list[0].den(i));
-        }   
-    }
-
-    if((Potentialfield_plot == 1 || domain.bc == "open") && domain.diagtype == "full")
-    {
-        lenght.clear();
-        efield.clear();
-        pot.clear();
-        for(int i = 0; i <domain.ni ; i++)
-        {
-            lenght.push_back(i*domain.dx);
-            efield.push_back(domain.ef(i));
-            pot.push_back(domain.phi(i));
-        }   
-    }
-
-    if(dft_flag == 1 && domain.diagtype == "full")
-    {
-        k.clear();
-        rho_k.clear();
-        for(int i = 0; i <domain.ni ; i++)
-        {
-            k.push_back(domain.dft_k(i));
-            rho_k.push_back(domain.dft_value(i));
-        }
-    }
-
-    plt::ion(); 
-
-    if (Energy_plot == 1 && (domain.bc == "pbc" || domain.bc == "rbc") && domain.diagtype == "full")
-    {
-        plt::figure(1);
-        plt::clf();
-        if (keflag == 1 && (domain.bc == "pbc" || domain.bc == "rbc") && domain.diagtype == "full")
-        {
-            plt::named_plot("kinetic energy", time, ke, "r-");
-        }
-        if (peflag == 1 && (domain.bc == "pbc" || domain.bc == "rbc") && domain.diagtype == "full")
-        {
-            plt::named_plot("potential energy", time, pe, "b-");
-        }
-        if (teflag == 1 && (domain.bc == "pbc" || domain.bc == "rbc" ) && domain.diagtype == "full")
-        {
-            plt::named_plot("total energy", time, total_energie, "g-");
-        }
-        plt::xlabel("Time");
-        plt::ylabel("Energy");
-        plt::legend();
-    }
-
-
-    double marker_size = 1.0;
-    std::map<std::string, std::string> style_options1 = {{"color", "blue"}, {"marker", "o"}};   
-    std::map<std::string, std::string> style_options2 = {{"color", "red"}, {"marker", "o"}};
-
-    if (phase_plot == 1 && domain.diagtype == "full")
-    {   
-        std::string label1 = species_list[species_index].name ;
-        //std::string label2 = species_list[2].name ;
-
-        std::map<std::string, std::string> scatter_keywords1;
-        scatter_keywords1["label"] = label1;
-        scatter_keywords1["color"] = "black"; // Explicitly set color
-
-        //std::map<std::string, std::string> scatter_keywords2;
-        //scatter_keywords2["label"] = label2;
-        //scatter_keywords2["color"] = "red"; // Explicitly set color
-
-        // Plot the scatter plots
-        plt::figure(2);
-        plt::clf();
-        plt::scatter(x, vx, marker_size, scatter_keywords1);
-        //plt::scatter(x1, vx1, marker_size, scatter_keywords2);
-        plt::xlabel("x");
-        plt::ylabel("v");
-
-        // Create legend keywords map
-        std::map<std::string, std::string> legend_keywords;
-        legend_keywords["loc"] = "upper right"; // Location of the legend
-
-        // Apply legend with location
-        plt::legend(legend_keywords); 
-
-        // Show the plot
-        plt::show(); 
-    }
-
-
-    if (Chargedensity_plot == 1 && domain.diagtype == "full")
-    {   
-        plt::figure(3);
-        plt::clf();
-        plt::named_plot("charge-density", lenght, charge_density, "r-");
-        plt::xlabel("x");
-        plt::ylabel("rho");
-        plt::legend(); 
-    }
-
-    if((Potentialfield_plot == 1 || domain.bc == "open") && domain.diagtype == "full")
-    {
-        plt::figure(4);
-        plt::clf();
-        plt::named_plot("potential", lenght, pot, "r-");
-        //plt::named_plot("Electricfield", lenght, efield, "b-");
-        plt::xlabel("x");
-        //plt::ylim(min_phi,max_phi);
-        plt::ylabel("phi/Efield");
-        plt::legend(); 
-    }
-
-    if(dft_flag == 1 && domain.diagtype == "full")
-    {
-        plt::figure(6);
-        plt::clf();
-        plt::named_plot("fourier transformed charge density", k, rho_k, "r-");
-        plt::xlabel("k");
-        plt::ylabel("rho_k");
-        plt::legend(); 
-    }
-    
-    if(domain.bc == "open" && domain.diagtype == "full")
-    {   
-        plt::figure(5);
-        plt::clf();
-        plt::named_plot("electron", time, num1, "r-");
-        plt::named_plot("ion", time, num2, "b-");
-        //plt::named_plot("Electricfield", lenght, efield, "b-");
-        plt::xlabel("time");
-        plt::ylabel("simulation particle");
-        plt::legend();
-
-    }
-
-    plt::pause(0.1);
-
-    // Show plot
-    plt::show();
 }
+
