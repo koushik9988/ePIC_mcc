@@ -6,6 +6,7 @@
 #include "linalg.h"
 #include "function.h"
 #include "solvers.h"
+#include <fftw3.h>
 
 class Domain; // Forward declaration of Domain class
 
