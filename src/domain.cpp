@@ -11,9 +11,8 @@ Domain::Domain(double x0, double dx, int ni):x0(x0), dx(dx), ni(ni)
     rho = vec<double>(ni);
     ef  = vec<double>(ni);
 
-    //temp data
-    dft_k = vec<double>(ni);
-    dft_value = vec<double>(ni);
+    dft_k = vec<double>((ni/2) +1);
+    dft_value = vec<double>((ni/2) +1);
     xL = (ni-1)*dx;
 }
 
