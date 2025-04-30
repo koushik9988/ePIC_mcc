@@ -71,14 +71,46 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${Python3_NumPy_INCLUDE_DIRS}
 )
 
-# Custom clean target
+#test code
+enable_testing()
+
+# Test executable for solver performance
+add_executable(test_solvers tests/test_solvers.cpp)
+target_link_libraries(test_solvers PRIVATE
+    ${Python3_LIBRARIES}
+    Python3::NumPy
+    m
+    PkgConfig::FFTW
+)
+
+target_include_directories(test_solvers PRIVATE
+    include
+    linearalgebra
+    ${Python3_INCLUDE_DIRS}
+    ${Python3_NumPy_INCLUDE_DIRS}
+)
+
+# Add test to CTest
+add_test(NAME SolverPerformanceTest COMMAND test_solvers)
+
+# Custom target to run tests
+add_custom_target(run_tests
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+    DEPENDS test_solvers
+    COMMENT "Running solver performance tests"
+)
+
+
 add_custom_target(clean-all
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/CMakeFiles
     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/CMakeCache.txt
     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/cmake_install.cmake
     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/Makefile
     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/${PROJECT_NAME}
+    COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/test_solvers
     COMMAND ${CMAKE_COMMAND} -E echo "Cleaned build directory"
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Removing all build artifacts"
 )
+
+
