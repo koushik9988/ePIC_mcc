@@ -14,6 +14,7 @@
 #include <thread>
 #include <string>
 #include "collision.h"
+#include <tuple>
 
 using namespace std; 
 using namespace display;
@@ -94,6 +95,8 @@ int main( int argc , char *argv[])
     std::string excitation_flag = INIParser::getString(iniData["collision"],"excitation");
     std::string ionization_flag = INIParser::getString(iniData["collision"],"ionization");
     double GAS_DENSITY = INIParser::getDouble(iniData["collision"],"GAS_DENSITY");
+    std::string collgroup = INIParser::getString(iniData["collision"],"collgroup");
+    auto collisionPairs = INIParser::parseCollGroup(collgroup);
 
     
     //normalization
@@ -389,10 +392,13 @@ int main( int argc , char *argv[])
             }
         }
 
-        //collision
-        ElectronNeutralCollision.handle_collisions(species_list[0],species_list[1]);
-
-        ElectronNeutralCollision.handle_collisions(species_list[2],species_list[1]);
+        if(domain.enable_elastic_collision || domain.enable_excitation_collision || domain.enable_ionization_collision)
+        {
+            for (const auto& [first, second] : collisionPairs)
+            {
+                ElectronNeutralCollision.handle_collisions(species_list[first], species_list[second]);  
+            }
+        }
         
         if(ts%write_interval== 0)
         {
