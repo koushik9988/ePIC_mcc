@@ -1,0 +1,89 @@
+#include <iostream>
+#include <cmath>
+#include <vector>
+#include <fftw3.h>
+#include <fstream>
+#include "slap.h"
+
+void SpectralSolver(vec<double> &rho_in, vec<double> &phi_out, int n, double L)
+{
+    int nr = (n/2) + 1;
+    double norm = 1.0 /n;
+ 
+    double *rho = fftw_alloc_real(n);
+    double *phi = fftw_alloc_real(n);
+    fftw_complex *rho_k= (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (nr));
+    fftw_complex *phi_k= (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (nr));
+
+    for(int i = 0 ; i < n ; i++)
+    {
+        rho[i] = -rho_in(i);
+    }
+
+    // Forward FFT
+    fftw_plan forward = fftw_plan_dft_r2c_1d(n, rho , rho_k, FFTW_ESTIMATE);
+    fftw_execute(forward);
+    fftw_destroy_plan(forward);
+
+
+    // Solve in Fourier space
+    for (int k = 0; k <= n/2; ++k)
+    {
+        double kx = 2.0 * M_PI * k / L;
+        double denom = (k == 0) ? 1.0 : -(kx * kx); // Avoid divide-by-zero at k=0
+
+        phi_k[k][0] = (k == 0) ? 0.0 : rho_k[k][0] / denom;
+        phi_k[k][1] = (k == 0) ? 0.0 : rho_k[k][1] / denom;
+    }
+
+    // Inverse FFT
+    fftw_plan backward = fftw_plan_dft_c2r_1d(n, phi_k, phi, FFTW_ESTIMATE);
+    fftw_execute(backward);
+    fftw_destroy_plan(backward);
+
+    // Normalize
+    for (int i = 0; i < n; ++i)
+    {
+        phi[i] *= norm;
+    }
+
+    for(int i = 0 ; i < n ; i++)
+    {
+        phi_out(i) = phi[i];
+    }
+
+    // Cleanup
+    fftw_free(rho_k);
+    fftw_free(phi_k);
+    fftw_free(rho);
+    fftw_cleanup();
+    
+}
+
+int main()
+{
+    int n = 128;
+    double L = 1.0;
+    double dx = L / n;
+
+    vec<double> x(n), rho(n), phi(n), phi_exact(n);
+
+    for (int i = 0; i < n; ++i)
+    {
+        x(i) = i * dx;
+        rho(i) = std::sin(2.0 * M_PI * x(i) / L);
+        phi_exact(i) = rho(i) / (4.0 * M_PI * M_PI);  // Exact solution defined upto a consnat c2 = 0 
+    }
+
+    SpectralSolver(rho, phi, n, L);
+
+
+    for (int i = 0; i < n; ++i)
+    {
+        std::cout<< x(i) << "\t" << phi(i) << "\t" << phi_exact(i) << "\n";
+    }
+  
+    return 0;
+}
+
+
