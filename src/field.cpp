@@ -2,6 +2,66 @@
 
 //mo problem here(numerical error problem )
 //void FieldSolve::SolvePotDirect(double *x, double *rho)
+
+void FieldSolve::Spectral()
+{
+    int ni = domain.ni;
+    double L = domain.xL;
+    int nr = (ni/2) + 1;
+    double norm = 1.0 /ni;
+ 
+    double *rho = fftw_alloc_real(ni);
+    double *phi = fftw_alloc_real(ni);
+    fftw_complex *rho_k= (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (nr));
+    fftw_complex *phi_k= (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (nr));
+
+    for(int i = 0 ; i < ni ; i++)
+    {
+        rho[i] =  -domain.rho(i)*((domain.L*domain.L)/(domain.LDe*domain.LDe));
+    }
+
+    // Forward FFT
+    fftw_plan forward = fftw_plan_dft_r2c_1d(ni, rho , rho_k, FFTW_ESTIMATE);
+    fftw_execute(forward);
+    fftw_destroy_plan(forward);
+
+
+    // Solve in Fourier space
+    for (int k = 0; k <= ni/2; ++k)
+    {
+        double kx = 2.0 * M_PI * k / L;
+        double denom = (k == 0) ? 1.0 : -(kx * kx); // Avoid divide-by-zero at k=0
+
+        phi_k[k][0] = (k == 0) ? 0.0 : rho_k[k][0] / denom;
+        phi_k[k][1] = (k == 0) ? 0.0 : rho_k[k][1] / denom;
+    }
+
+    // Inverse FFT
+    fftw_plan backward = fftw_plan_dft_c2r_1d(ni, phi_k, phi, FFTW_ESTIMATE);
+    fftw_execute(backward);
+    fftw_destroy_plan(backward);
+
+    // Normalize
+    for (int i = 0; i < ni; ++i)
+    {
+        phi[i] *= norm;
+    }
+
+    domain.phi = 0;
+
+    for(int i = 0 ; i < ni ; i++)
+    {
+        domain.phi(i) = phi[i];
+    }
+
+    // Cleanup
+    fftw_free(rho_k);
+    fftw_free(phi_k);
+    fftw_free(rho);
+    fftw_cleanup();
+    
+}
+
 void FieldSolve::Direct(int ts)
 {
     /* Set coefficients, precompute them*/
@@ -235,36 +295,8 @@ void FieldSolve::CalculateEfield()
 
 void FieldSolve::PotentialSolver(int ts)
 {
-    std::string solverTypeStr = domain.SolverType;
-    SolverType solverType;
-
-    if (solverTypeStr == "direct")
-        solverType = SolverType::DIRECT;
-    else if (solverTypeStr == "pcg")
-        solverType = SolverType::PCG;
-    else if (solverTypeStr == "cg")
-        solverType = SolverType::CG;
-    else if (solverTypeStr == "gs")
-        solverType = SolverType::GS;
-    else
-        solverType = SolverType::DIRECT; // Default to DIRECT
-
-    switch (solverType)
-    {
-    case SolverType::DIRECT:
-        Direct(ts);
-        break;
-    case SolverType::PCG:
-        pcgsolver();
-        break;
-    case SolverType::CG:
-        cgsolver();
-        break;
-    case SolverType::GS:
-        GaussElim();
-        break;
-    default:
-        Direct(ts);
-        break;
-    }
+    if(domain.SolverType == "direct") Direct(ts);
+    if(domain.SolverType == "cg") cgsolver();
+    if(domain.SolverType == "pcg") pcgsolver();
+    if(domain.SolverType == "spectral") Spectral();
 }
