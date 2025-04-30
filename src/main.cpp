@@ -61,7 +61,7 @@ int main( int argc , char *argv[])
     std::string outputfolder = INIParser::getString(iniData["file"],"output");
 
     //grid/domain
-    int ni = INIParser::getInt(iniData["domain"], "NC");//grid no
+    int ni = INIParser::getInt(iniData["domain"], "ni");//grid no
     //int ni = NC+1; // no of grid points is one more than cell no
     double x0 = INIParser::getInt(iniData["domain"],"x0");
 
