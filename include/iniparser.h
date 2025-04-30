@@ -14,6 +14,7 @@ this header contain function prototypes that helps to parse a .ini file using ST
 #include <fstream>
 #include <sstream>
 #include <species.h>
+#include <tuple>
 
 class Domain;
 
@@ -29,6 +30,7 @@ class INIParser
     static std::string getString(const std::map<std::string, std::string> &section, const std::string &key);
     static std::vector<std::string> split(const std::string &str, char delimiter);
     static std::pair<std::string, int> loadtypeextract(const std::string &position_init);
+    static std::vector<std::pair<int, int>> parseCollGroup(const std::string &collGroupStr);
     
     private:
     static void trim(std::string& str);
