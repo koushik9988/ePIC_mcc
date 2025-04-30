@@ -34,6 +34,12 @@ void FieldSolve::Spectral()
 
         phi_k[k][0] = (k == 0) ? 0.0 : rho_k[k][0] / denom;
         phi_k[k][1] = (k == 0) ? 0.0 : rho_k[k][1] / denom;
+        domain.dft_k(k) = kx;
+    }
+
+    for( int i = 0 ; i < nr ; i++)
+    {
+        domain.dft_value(i) = sqrt(rho_k[i][0]*rho_k[i][0] + rho_k[i][1]*rho_k[i][1]);
     }
 
     // Inverse FFT
