@@ -88,7 +88,7 @@ ylabel_map = {
 ylabel = ylabel_map[plot_type]
 
 im = ax.imshow(hist2d, extent=extent, origin='upper', interpolation='bilinear', aspect=aspect, cmap='hot')
-ax.set_xlabel(r'Time [$\omega_{pe}^{-1}$]')
+ax.set_xlabel(r'[$\omega_{pe} t$]')
 ax.set_ylabel(ylabel)
 ax.set_title(f"{ylabel} vs Time for {particle_type}")
 
@@ -98,5 +98,4 @@ cbar.set_label("Particle Count per Bin")
 # Save and show
 outname = f"{plot_type}_{particle_type}.png"
 plt.savefig(pjoin(path_fig, outname), dpi=300)
-print(f"Saved plot to {pjoin(path_fig, outname)}")
 plt.show()
