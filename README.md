@@ -98,56 +98,57 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 |`dft_rho`|Flag for plotting Fourier transformed charge density|
 
 
-## `[visualplot]`
-
-- **Energy_plot**: Flag for plotting energy.
-- **keflag**: Flag for kinetic energy plot.
-- **peflag**: Flag for potential energy plot.
-- **teflag**: Flag for total energy plot.
-- **Potentialfield_plot**: Flag for plotting potential field.
-- **Chargedensity_plot**: Flag for plotting charge density.
-- **phase_plot**: Flag for plotting phase space.
-- **species_index**: Index of species for phase plot.
-- **dft_rho**: Flag for plotting Fourier transformed charge density.
-
 ## `[domain]`
 
-- **NC**: Number of cells in the domain.
-- **x0**: origin coordinate of the domain.
+| Parameter | Description |
+|----------|-------------|
+| `NC` | Number of grid points |
+| `x0` | Origin coordinate of the domain |
+
 
 ## `[normalization]`
 
-- **norm_scheme**: Normalization scheme.
-- **vel_norm_scheme**: Velocity normalization scheme.
-- **lenght_scale**: User defined Length scale for normalization.
-- **time_scale**: User defined Time scale for normalization (`omegape`).
-- **energy_scale**: User defined Energy scale for normalization.
+| Parameter | Description |
+|-----------|-------------|
+| `norm_scheme` | Type of normalization (`1 = electron scale`, `2 = ion scale`, `3 = subcycling`, `4 = mixed scale`, `5 = mixed scale`) |
+| `vel_norm_scheme` | Velocity normalization type (`1 = vthe`, `2 = vthi`, `3 = vcs(ion-acoustic speed)`) |
+| `lenght_scale` | User defined Characteristic length scale |
+| `time_scale` | User Defined Characteristic time scale (`1/ω_pe`) |
+| `energy_scale` | User defined Characteristic energy scale (not used) |
+
 
 ## `[simulation]`
 
-- **shapefunction**: Shape function for particle interpolation (e.g., 'NGP', `CIC`).
-- **push_parallal**: Boolean flag for parallel particle pushing.
-- **deposit_parallal**: Boolean flag for parallel charge deposition.
-- **density**: Plasma density.
-- **bc**: Boundary condition:
-  - `pbc`: Periodic boundary condition.
-  - `open`: Open boundary condition.
-- **see_rate**: Secondary electron emission rate.(Not Implemented)
-- **tempwall**: Temperature at the wall.(Not Implemented)
-- **ionfixed**: Flag for fixed ions  in the background.(1 for fixed ion background )
+| Parameter | Description |
+|-----------|-------------|
+| `shapefunction` | Interpolation scheme: `NGP` and  `CIC` |
+| `push_parallal` | Use parallel particle pushing (`1 = enabled`) |
+| `deposit_parallal` | Use parallel charge deposition (`1 = enabled`) |
+| `density` | Plasma density |
+| `bc` | Boundary condition: `pbc` (periodic) or `open` |
+| `see_rate` | Secondary electron emission rate *(not implemented)* |
+| `tempwall` | Wall temperature *(not implemented)* |
+| `ionfixed` | Fixed background ions (`1 = yes (ions donot move)`, `0 = no (ions moves)`) |
+
 
 ## `[solver]`
 
-- **solvertype**: Type of solver (`direct`, 'pcg').
-- **tolerance**: Solver tolerance.
-- **max_iteration**: Maximum number of solver iterations.
+| Parameter | Description |
+|----------|-------------|
+| `solvertype` | Solver method: `gs`, `pcg`,`spectral` `(use spectral for periodic boundary)`|
+| `tolerance` | Convergence tolerance (for iterative solvers) |
+| `max_iteration` | Maximum iterations (for iterative solvers) |
+
 
 ## `[collision]`
-
-- **elastic**: Boolean flag for elastic collisions.
-- **excitation**: Boolean flag for excitation collisions.
-- **ionization**: Boolean flag for ionization collisions.
-- **GAS_DENSITY**: Neureal Gas density (`1e20`).
+| Parameter | Description |
+|----------|-------------|
+| `elastic` | Enable elastic collisions (`true` and `false`) |
+| `excitation` | Enable excitation collisions |
+| `ionization` | Enable ionization |
+| `GAS_DENSITY` | Neutral gas density (e.g., `1e20`) |
+| `collgroup ` | particle collision group in a pair of two `collgroup = 12,21 means that first species will collide with a gas which is neutral form of 2nd species (which is generally an ion)
+and third species will collide with same gas which is neutral form of 2nd species`|
 
 ## `[species]`
 
