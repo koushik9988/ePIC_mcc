@@ -58,31 +58,45 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 
 ## `[file]`
 
-- **output**: Specifies the directory where the output data will be stored.
+| Parameter | Description |
+|----------|-------------|
+| `output` | Path to directory where simulation output data in hdf5 format is saved |
 
 ## `[time]`
+| Parameter | Description |
+|----------|-------------|
+| `NUM_TS` | Total number of time steps to run |
+| `DT_coeff` | Time step as a fraction of (1/frequency): `dt = DT_coeff / ω_pe` or `dt = DT_coeff / ω_pi` |
 
-- **NUM_TS**: Total number of time steps for the simulation.
-- **DT_coeff**: Coefficient for calculating the time step:
-  
-  ```math
-  dt = DT_{\text{coeff}} \frac{1}{\omega_{\text{pe}}}
-  ```
 
 ## `[diagnostics]`
+| Parameter | Description |
+|----------|-------------|
+| `write_interval` | Interval (in steps) to write density/field data |
+| `write_interval_phase` | Interval to write phase-space data |
+| `write_diagnostics` | Interval to output diagnostics in screen (energies, phase plot etc.) |
+| `write_flag` | What data to write in disk: `0 = none`, `1 = all`, `2 = fields only`, `3 = phase-space only` |
+| `save_fig` | Save plots as images (`1 = yes`, `0 = no`) (deprecated) |
+| `sub_cycle_interval` | Frequency of ion sub-cycling  |
+| `precision` | floating point precision level of diagnostics output in screen|
+| `diagtype` | Type of diagnostics :`off(print just time step)`, `basic (print just time and max_phi)` ,`full (print evryting with live plot at runtime)`|
 
-- **write_interval**: Interval for writing density and field data.
-- **write_interval_phase**: Interval for writing phase-space data.
-- **write_diagnostics**: Interval for writing diagnostic outputs.
-- **write_flag**: Flag for controlling data writing:
-  - `1`: Write both phase and field data.
-  - `2`: Write only field data.
-  - `3`: Write only phase data.
-  - `0`: Write no data.
-- **save_fig**: Flag for saving figures.
-- **sub_cycle_interval**: Interval for sub-cycling diagnostics.
-- **precision**: Precision level for diagnostics output.
-- **diagtype**: Type of diagnostic output (`basic`).
+
+
+## `[visualplot]`
+
+| Flag | Description |
+|------|-------------|
+| `Energy_plot` | Flag for plotting energy :`Energy_plot = 1` and `Energy_plot = 0` |
+| `keflag` | Flag for kinetic energy plot |
+| `peflag` | Flag for potential energy plot. |
+| `teflag` | Flag for potential energy plot. |
+| `Potentialfield_plot` | Flag for plotting potential field |
+| `Chargedensity_plot` | Flag for plotting charge density |
+| `phase_plot` | Flag for plotting phase space |
+| `species_index` | Index of species to use for phase-space and density plots starting from index 0 as in species section of the input file (e.g 0 = electrons, 1 = ion etc) |
+|`dft_rho`|Flag for plotting Fourier transformed charge density|
+
 
 ## `[visualplot]`
 
