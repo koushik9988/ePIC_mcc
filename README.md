@@ -147,7 +147,9 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 | `excitation` | Enable excitation collisions |
 | `ionization` | Enable ionization |
 | `GAS_DENSITY` | Neutral gas density (e.g., `1e20`) |
-| `collgroup ` | particle collision group in a pair of two `collgroup = 12,21 means that first species will collide with a gas which is neutral form of 2nd species (which is generally an ion)
+| `collgroup ` | particle collision group in a pair of two|
+
+`collgroup = 12,21 means that first species will collide with a gas which is neutral form of 2nd species (which is generally an ion)
 and third species will collide with same gas which is neutral form of 2nd species`|
 
 ## `[species]`
