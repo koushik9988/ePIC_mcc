@@ -172,11 +172,13 @@ Example species configuration:
 ```
   electron, 9.10938215E-31, 50000, 1, -1, 1, -10, uniform
   ion,6.63352090e-26,50000,0,1,0,0,uniform
-  species1,9.10938215E-31, 50000,1,-1,1,10,uniform
-  species2,9.10938215E-31,50000,1,1,1,10,uniform
-  species3,9.10938215E-31, 50000,1,-1,1,10,uniform
+  species_a,9.10938215E-31, 50000,1,-1,0.1,0,uniform
+  species_b,9.10938215E-31,50000,1,1,0.3,0,uniform
+  species_c,9.10938215E-31, 50000,1,-1,0.4,0,uniform
 ```
-
+`now normalized density equation become n_a + n_c + n_e0 = n_i0 + n_b => n_a/n_e0 + n_c/n_e0 + n_e0/n_e0 = n_i0/n_e0 + n_b/n_e0
+Let n_a/_ne0 = a , n_b/n_e0 = b and n_c/n_e0 = c then n_e0 = n_i0/(1 + a - b + c) this equation can be interpreated as 
+n_e0 = n_i0/(1 - charge_sign_a * a - charge_sign_a * b + charge_sign_c * c) so a = 0.1, b= 0.3 and c = 0.4 `
 
  # Data processing and visualization
  1. Plot kinetic enegy ,potential enegy and total enegy
