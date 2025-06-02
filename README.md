@@ -110,8 +110,8 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 
 | Parameter | Description |
 |-----------|-------------|
-| `norm_scheme` | Type of normalization (`1 = electron scale`, `2 = ion scale`, `3 = subcycling`, `4 = mixed scale(time is normalized by electron plasma frequency and space is normalized by ion debye length)`, `5 = user defined scale( input is given below)`) |
-| `vel_norm_scheme` | Velocity normalization type (`1 = vthe`, `2 = vthi`, `3 = vcs(ion-acoustic speed)`) |
+| `norm_scheme` | Type of normalization (`1 = electron scale (time and space is normalized by electron plasma frequency and debye lenghts)`, `2 = ion scale`, `3 = subcycling`, `4 = mixed scale(time is normalized by electron plasma frequency and space is normalized by ion debye length)`, `5 = user defined scale( input is given below)`) |
+| `vel_norm_scheme` | Velocity normalization type (`1 = vthe ( velocity is normalized by electron thermal speed`, `2 = vthi (velocity is normalized by ion thermal speed)`, `3 = vcs(ion-acoustic speed)`) |
 | `lenght_scale` | User defined Characteristic length scale |
 | `time_scale` | User Defined Characteristic time scale (`1/ω_pe`) |
 | `energy_scale` | User defined Characteristic energy scale (not used) |
