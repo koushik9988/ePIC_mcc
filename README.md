@@ -87,15 +87,15 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 
 | Flag | Description |
 |------|-------------|
-| `Energy_plot` | Flag for plotting energy :`Energy_plot = 1` and `Energy_plot = 0` |
-| `keflag` | Flag for kinetic energy plot |
-| `peflag` | Flag for potential energy plot. |
-| `teflag` | Flag for potential energy plot. |
-| `Potentialfield_plot` | Flag for plotting potential field |
-| `Chargedensity_plot` | Flag for plotting charge density |
-| `phase_plot` | Flag for plotting phase space |
+| `Energy_plot` | Flag for plotting energy :`Energy_plot = 1 (on)` and `Energy_plot = 0 (off)` |
+| `keflag` | Flag for kinetic energy plot (1 = onn, 0 = off) |
+| `peflag` | Flag for potential energy plot. (1 = onn, 0 = off)|
+| `teflag` | Flag for potential energy plot. (1 = onn, 0 = off)|
+| `Potentialfield_plot` | Flag for plotting potential field (1 = onn, 0 = off)|
+| `Chargedensity_plot` | Flag for plotting charge density (1 = onn, 0 = off)|
+| `phase_plot` | Flag for plotting phase space (1 = onn, 0 = off)|
 | `species_index` | Index of species to use for phase-space and density plots starting from index 0 as in species section of the input file (e.g 0 = electrons, 1 = ion etc) |
-|`dft_rho`|Flag for plotting Fourier transformed charge density|
+|`dft_rho`|Flag for plotting Fourier transformed charge density (1 = onn, 0 = off) |
 
 
 ## `[domain]`
@@ -126,8 +126,8 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 | `deposit_parallal` | Use parallel charge deposition (`1 = enabled`) |
 | `density` | Plasma density |
 | `bc` | Boundary condition: `pbc` (periodic) or `open` |
-| `see_rate` | Secondary electron emission rate *(not implemented)* |
-| `tempwall` | Wall temperature *(not implemented)* |
+| `see_rate` | Secondary electron emission rate *(not tested/used)* |
+| `tempwall` | Wall temperature *(not tested/used)* |
 | `ionfixed` | Fixed background ions (`1 = yes (ions donot move)`, `0 = no (ions moves)`) |
 
 
