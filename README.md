@@ -93,9 +93,9 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 | `teflag` | Flag for potential energy plot. `(1 = on, 0 = off)`|
 | `Potentialfield_plot` | Flag for plotting potential field `(1 = on, 0 = off)`|
 | `Chargedensity_plot` | Flag for plotting charge density `(1 = on, 0 = off)`|
-| `phase_plot` | Flag for plotting phase space `(1 = onn, 0 = off)`|
+| `phase_plot` | Flag for plotting phase space `(1 = on, 0 = off)`|
 | `species_index` | Index of species to use for phase-space and density plots starting from index 0 as in species section of the input file (e.g 0 = electrons, 1 = ion etc) |
-|`dft_rho`|Flag for plotting Fourier transformed charge density (1 = onn, 0 = off) |
+|`dft_rho`|Flag for plotting Fourier transformed charge density `(1 = onn, 0 = off)` |
 
 
 ## `[domain]`
