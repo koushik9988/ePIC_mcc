@@ -168,7 +168,7 @@ Example species configuration:
   ```
 (Note : Electron should be in the first line and Ion should be in the 2nd line and all other species will go after that.)
 ## `Normalized density :`
-`ion density , n_i0 = plasma density, so for two component electron-ion plasma n_e0 = n_i0 => 1 = n_i0/n_e0 => normalized electron density is 1 by default and normalized ion density (wrt electron) set to zero as ion density is set equal to plasma density and  remains fixed. For example if out system is multicomponent ans consist of 5 species as below`
+`ion density , n_i0 = plasma density, so for two component electron-ion plasma n_e0 = n_i0 => 1 = n_i0/n_e0 => normalized electron density is 1 by default and normalized ion density (wrt electron) set to zero as ion density is set equal to plasma density and  so it remains fixed and doesnot change with respect to electon density. For example if out system is multicomponent ans consist of 5 species as below`
 ```
   electron, 9.10938215E-31, 50000, 1, -1, 1, -10, uniform
   ion,6.63352090e-26,50000,0,1,0,0,uniform
@@ -178,7 +178,7 @@ Example species configuration:
 ```
 `now normalized density equation become n_a + n_c + n_e0 = n_i0 + n_b => n_a/n_e0 + n_c/n_e0 + n_e0/n_e0 = n_i0/n_e0 + n_b/n_e0
 Let n_a/_ne0 = a , n_b/n_e0 = b and n_c/n_e0 = c then n_e0 = n_i0/(1 + a - b + c) this equation can be interpreated as 
-n_e0 = n_i0/(1 - charge_sign_a * a - charge_sign_a * b + charge_sign_c * c) so a = 0.1, b= 0.3 and c = 0.4 `
+n_e0 = n_i0/(1 - charge_sign_a * a - charge_sign_a * b - charge_sign_c * c) with values  a = 0.1, b= 0.3 and c = 0.4 by taking charge sign as : species_a: -1, species_b: +1, species_c: -1. As mentioned above by default normalized electron and ion density are set to 1 and 0 respectively`
 
  # Data processing and visualization
  1. Plot kinetic enegy ,potential enegy and total enegy
