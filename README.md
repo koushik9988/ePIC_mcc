@@ -168,7 +168,7 @@ Example species configuration:
   ```
 (Note : Electron should be in the first line and Ion should be in the 2nd line and all other species will go after that.)
 ## `Normalized density :`
-`ion density , n_i0 = plasma density, so for two component electron-ion plasma n_e0 = n_i0 => 1 = n_i0/n_e0 => normalized electron density is 1 by default and normalized ion density (wrt electron) set to zero as ion density is set equal to plasma density and  so it remains fixed and doesnot change with respect to electon density. For example if out system is multicomponent ans consist of 5 species as below`
+`ion density , n_i0 = plasma density, so for two component electron-ion plasma n_e0 = n_i0 => 1 = n_i0/n_e0 => normalized electron density is 1 by default and normalized ion density (wrt electron) set to zero as ion density is set equal to plasma density and  so it remains fixed and doesnot change with respect to electon density. For example if our system is multicomponent and consist of 5 species as below`
 ```
   electron, 9.10938215E-31, 50000, 1, -1, 1, -10, uniform
   ion,6.63352090e-26,50000,0,1,0,0,uniform
