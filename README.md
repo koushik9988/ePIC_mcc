@@ -149,9 +149,7 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 | `GAS_DENSITY` | Neutral gas density (e.g., `1e20`) |
 | `collgroup ` | particle collision group in a pair of two|
 
-`collgroup = 12,21 means that first species will collide with a gas which has property of the 2nd species (which is generally an ion)
-and third species will collide with same gas (for example in species section below 2nd species is argon ion so 12 implies that electron will collide with neutral argon atom which have similar mass to argon ion).
-If we want we can create another species for argon neutral but we have to then set is normalized density zero as mcc collision treats neutral as fluid and that neutral should not take part in simulation like electrons and ions does`|
+|`Collgroup defines pairs of species for collision interactions using two-digit codes. For example, collgroup = 12, 21 means: Species 1 (e.g., electrons) will collide with the neutral gas having properties of Species 2 (e.g., argon ion). Species 2 will similarly interact with the neutral gas defined by Species 1. This simplifies modeling by treating the gas as a fluid using the physical properties of an existing species (typically ions). To explicitly define neutral atoms (e.g., neutral argon), you can add a separate species in the [species] section with zero normalized density and dummy values for other parameters, ensuring it does not participate in the simulation as particles. Note: Neutrals are not simulated as particles but only act as background gas for MCC purposes.`|
 
 ## `[species]`
 
