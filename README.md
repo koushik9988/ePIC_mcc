@@ -167,6 +167,8 @@ Example species configuration:
   beam, 9.10938215E-31, 50000, 1, -1, 1, 10, uniform
   ```
 (Note : Electron should be in the first line and Ion should be in the 2nd line and all other species will go after that.)
+## `Normalized density :`
+`ion density , $n_{i0} = plasma density$`
 
 
  # Data processing and visualization
