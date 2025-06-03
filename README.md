@@ -190,8 +190,23 @@ n_e0 = n_i0/(1 - charge_sign_a * a - charge_sign_b * b - charge_sign_c * c)
 `with normalized density values : a = 0.1, b= 0.3 and c = 0.4 by taking charge sign as : species_a: -1, species_b: +1, species_c: -1. As mentioned above by default normalized electron and ion density are set to 1 and 0 respectively.
 Above equation can be written like this for any number of species with different charges`
 
-<pre lang="markdown"> ### ⚡ Charge Normalization Snippet (C++) This code normalizes species densities based on their charge signs and fractional densities. It ensures the overall quasi-neutrality of a plasma system by adjusting the electron and ion densities accordingly. ```cpp double k = 0; for (int i = 0; i < species_no; i++) { k += (-charge_signs[i]) * frac_densities[i]; } // Ion and electron densities normalization normden[1] = den; // Ion density normden[0] = den / k; // Electron density (ensures quasi-neutrality) // Normalize densities for other species for (int i = 2; i < species_no; i++) { normden[i] = frac_densities[i] * normden[0]; } ``` > 💡 This snippet assumes: > - `charge_signs[i]`: Sign of the charge for species *i* (`-1` for electrons, `+1` for ions, etc.) > - `frac_densities[i]`: Fractional number densities (relative) > - `den`: The absolute density of the dominant ion species > - `normden[i]`: The normalized number densities </pre>
+```
+double k = 0;
+for(int i = 0; i < species_no; i++)
+{
+    k += (-charge_signs[i]) * frac_densities[i];
+}
 
+// display::print(k);
+
+normden[1] = den; // ion density
+normden[0] = den / k; // electron density
+
+for(int i = 2; i < species_no; i++)
+{
+    normden[i] = frac_densities[i] * normden[0];
+}
+```
 
  # Data processing and visualization
  1. Plot kinetic enegy ,potential enegy and total enegy
