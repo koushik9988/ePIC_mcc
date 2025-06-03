@@ -169,8 +169,8 @@ int main( int argc , char *argv[])
 
     //display::print(k);
 
-    normden[1] = den;
-    normden[0] = den/k;
+    normden[1] = den; //ion density
+    normden[0] = den/k; //electron density
     
     for(int i = 2 ;i < species_no; i++)
     {
