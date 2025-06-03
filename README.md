@@ -196,7 +196,7 @@ n_e0 = n_i0/(1 - charge_sign_a * a - charge_sign_a * b - charge_sign_c * c) with
 
 ## Contributors
 - [Rakesh Moulick](https://github.com/rakeshmoulick)
-- Kaushik Kalita
+- [Kaushik Kalita](https://github.com/koushik9988)
   
 
 
