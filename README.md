@@ -176,9 +176,17 @@ Example species configuration:
   species_b,9.10938215E-31,50000,1,1,0.3,0,uniform
   species_c,9.10938215E-31, 50000,1,-1,0.4,0,uniform
 ```
-`now normalized density equation become n_a + n_c + n_e0 = n_i0 + n_b => n_a/n_e0 + n_c/n_e0 + n_e0/n_e0 = n_i0/n_e0 + n_b/n_e0
-Let n_a/_ne0 = a , n_b/n_e0 = b and n_c/n_e0 = c then n_e0 = n_i0/(1 + a - b + c) this equation can be interpreated as 
-n_e0 = n_i0/(1 - charge_sign_a * a - charge_sign_a * b - charge_sign_c * c) with values  a = 0.1, b= 0.3 and c = 0.4 by taking charge sign as : species_a: -1, species_b: +1, species_c: -1. As mentioned above by default normalized electron and ion density are set to 1 and 0 respectively`
+`now normalized density equation become` 
+```
+n_a + n_c + n_e0 = n_i0 + n_b
+```
+n_a/n_e0 + n_c/n_e0 + n_e0/n_e0 = n_i0/n_e0 + n_b/n_e0
+```
+`Let n_a/_ne0 = a , n_b/n_e0 = b and n_c/n_e0 = c then n_e0 = n_i0/(1 + a - b + c) this equation can be rewritten as`
+```
+n_e0 = n_i0/(1 - charge_sign_a * a - charge_sign_b * b - charge_sign_c * c) 
+```
+`with values : a = 0.1, b= 0.3 and c = 0.4 by taking charge sign as : species_a: -1, species_b: +1, species_c: -1. As mentioned above by default normalized electron and ion density are set to 1 and 0 respectively`
 
  # Data processing and visualization
  1. Plot kinetic enegy ,potential enegy and total enegy
