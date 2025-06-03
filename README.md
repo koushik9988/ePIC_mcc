@@ -180,6 +180,7 @@ Example species configuration:
 ```
 n_a + n_c + n_e0 = n_i0 + n_b
 ```
+```
 n_a/n_e0 + n_c/n_e0 + n_e0/n_e0 = n_i0/n_e0 + n_b/n_e0
 ```
 `Let n_a/_ne0 = a , n_b/n_e0 = b and n_c/n_e0 = c then n_e0 = n_i0/(1 + a - b + c) this equation can be rewritten as`
