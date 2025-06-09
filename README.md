@@ -167,7 +167,7 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 
 |`(Note : Electron should be in the first line and Ion should be in the 2nd line and all other species will go after that.)
 X is the species index starting from 0. The first two species must be electron and ion respectively. Additional species (e.g., beams or negative ions) follow. Neutrals are specified with charge_sign = 0 and are used only for background collisions.`|
-Example
+# `Example`
 ```
 [Species]
 #number of species
