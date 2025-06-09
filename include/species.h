@@ -175,6 +175,19 @@ class Species
 };
 
 
+struct SpeciesParams
+{
+    string name;
+    double mass;
+    int num;
+    double temp;
+    int charge_sign;
+    double normden;
+    double vs;
+    string loadtype;
+};
+
+
 /**
 *@brief function for secondary elctron emission.
 * @param species instances of sepcies class.
