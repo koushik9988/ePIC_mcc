@@ -165,8 +165,59 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 | `species_X.vs`          | Streaming velocity (normalized)                                   |
 | `species_X.loadtype`    | Particle distribution type: `uniform` or other supported types    |
 
-|(Note : Electron should be in the first line and Ion should be in the 2nd line and all other species will go after that.)
-`X is the species index starting from 0. The first two species must be electron and ion respectively. Additional species (e.g., beams or negative ions) follow. Neutrals are specified with charge_sign = 0 and are used only for background collisions.`|
+|`(Note : Electron should be in the first line and Ion should be in the 2nd line and all other species will go after that.)
+X is the species index starting from 0. The first two species must be electron and ion respectively. Additional species (e.g., beams or negative ions) follow. Neutrals are specified with charge_sign = 0 and are used only for background collisions.`|
+Example
+```
+[Species]
+#number of species
+count = 5
+
+species_0.name = electron
+species_0.mass = 9.10938215E-31
+species_0.num = 20000
+species_0.temp = 1
+species_0.charge_sign = -1
+species_0.normden = 1
+species_0.vs = 10
+species_0.loadtype = uniform
+
+species_1.name = ion
+species_1.mass = 1.661E-27
+species_1.num = 20000
+species_1.temp = 0.0
+species_1.charge_sign = 1
+species_1.normden = 0
+species_1.vs = 0
+species_1.loadtype = uniform
+
+species_2.name = negion
+species_2.mass = 1.661E-27
+species_2.num = 20000
+species_2.temp = 0.026
+species_2.charge_sign = -1
+species_2.normden = 0.5
+species_2.vs = 0
+species_2.loadtype = uniform
+
+species_3.name = beam
+species_3.mass = 1.661E-27
+species_3.num = 20000
+species_3.temp = 0.026
+species_3.charge_sign = -1
+species_3.normden = 0.4
+species_3.vs = 10
+species_3.loadtype = uniform
+
+species_4.name = neutralgas
+species_4.mass = 3.347E-27
+species_4.num = 10
+species_4.temp = 0.000
+species_4.charge_sign = 0
+species_4.normden = 0
+species_4.vs = 0
+species_4.loadtype = uniform
+```
 ## `Normalized density :`
 `ion density , n_i0 = plasma density, so for two component electron-ion plasma n_e0 = n_i0 => 1 = n_i0/n_e0 => normalized electron density is 1 by default and normalized ion density (wrt electron) set to zero as ion density is set equal to plasma density and  so it remains fixed and doesnot change with respect to electon density. For example if our system is multicomponent and consist of 5 species as below`
 ```
