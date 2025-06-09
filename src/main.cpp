@@ -121,6 +121,14 @@ int main( int argc , char *argv[])
     int species_index = INIParser::getInt(iniData["visualplot"],"species_index");
     int dft_flag = INIParser::getInt(iniData["visualplot"],"dft_rho");
 
+
+
+    //parse species data
+    const auto& SpeciesSection = iniData.at("Species");
+
+    // Get the number of Species
+    int species_no = INIParser::getInt(SpeciesSection, "count");
+
     //vector to store species data
     std::vector<std::string> names;
     std::vector<double> mass;
