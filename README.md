@@ -165,7 +165,8 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 | `species_X.vs`          | Streaming velocity (normalized)                                   |
 | `species_X.loadtype`    | Particle distribution type: `uniform` or other supported types    |
 
-(Note : Electron should be in the first line and Ion should be in the 2nd line and all other species will go after that.)
+|(Note : Electron should be in the first line and Ion should be in the 2nd line and all other species will go after that.)
+`X is the species index starting from 0. The first two species must be electron and ion respectively. Additional species (e.g., beams or negative ions) follow. Neutrals are specified with charge_sign = 0 and are used only for background collisions.`|
 ## `Normalized density :`
 `ion density , n_i0 = plasma density, so for two component electron-ion plasma n_e0 = n_i0 => 1 = n_i0/n_e0 => normalized electron density is 1 by default and normalized ion density (wrt electron) set to zero as ion density is set equal to plasma density and  so it remains fixed and doesnot change with respect to electon density. For example if our system is multicomponent and consist of 5 species as below`
 ```
