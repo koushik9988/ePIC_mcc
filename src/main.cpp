@@ -54,8 +54,8 @@ int main( int argc , char *argv[])
     
     auto iniData = INIParser::parse(filename);
 
-    auto species_section = iniData["species"];
-    int species_no = species_section.size();
+    //auto species_section = iniData["species"];
+    //int species_no = species_section.size();
 
     //output folder
     std::string outputfolder = INIParser::getString(iniData["file"],"output");
@@ -142,24 +142,36 @@ int main( int argc , char *argv[])
     vs.reserve(species_no);
     pos_init.reserve(species_no);
 
-    // First pass: Parse the species section and populate vectors
-    for (const auto& species_entry : species_section)
-    {
-        const std::string& line = species_entry.second;
-        std::vector<std::string> tokens = INIParser::split(line, ',');
+    std::vector<SpeciesParams> param_list;
+    param_list.reserve(species_no);
 
-        if (tokens.size() == 8)
-        {  
-            names.push_back(tokens[0]);                      // Species name
-            mass.push_back(std::stod(tokens[1]));
-            nParticles.push_back(std::stoi(tokens[2]));      // Number of particles
-            temps.push_back(std::stod(tokens[3]));           // Temperature
-            charge_signs.push_back(std::stoi(tokens[4]));    // Charge sign (integer -1 or 1)
-            frac_densities.push_back(std::stod(tokens[5]));  // Fractional density
-            vs.push_back(std::stod(tokens[6]));  // Fractional density
-            pos_init.push_back(tokens[7]);
-        }
+    for (int i = 0; i < species_no; ++i)
+    {
+        std::string prefix = "species_" + std::to_string(i) + ".";
+
+        SpeciesParams params;
+        params.name = INIParser::getString(SpeciesSection, prefix + "name");
+        params.mass = INIParser::getDouble(SpeciesSection, prefix + "mass");
+        params.num = INIParser::getInt(SpeciesSection, prefix + "num");
+        params.temp = INIParser::getDouble(SpeciesSection, prefix + "temp");
+        params.charge_sign = INIParser::getInt(SpeciesSection, prefix + "charge_sign");
+        params.normden = INIParser::getDouble(SpeciesSection, prefix + "normden");
+        params.vs = INIParser::getDouble(SpeciesSection, prefix + "vs");
+        params.loadtype = INIParser::getString(SpeciesSection, prefix + "loadtype");
+        param_list.push_back(params);
     }
+
+   for (const auto& p : param_list)
+   {
+        names.push_back(p.name);                      // Species name
+        mass.push_back(p.mass);
+        nParticles.push_back(p.num);      // Number of particles
+        temps.push_back(p.temp);           // Temperature
+        charge_signs.push_back(p.charge_sign);    // Charge sign (integer -1 or 1)
+        frac_densities.push_back(p.normden);  // Fractional density
+        vs.push_back(p.vs);  // Fractional density
+        pos_init.push_back(p.loadtype);
+   }
 
     double k = 0;
     for(int i = 0 ; i < species_no; i++)
