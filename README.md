@@ -151,21 +151,20 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 
 |`Collgroup defines pairs of species(for reference see [species] section below)for collision interactions using two-digit codes. For example, collgroup = 01, 21 means: first  Species with index 0 (as in coding index start from 0,1,2 etc) (e.g., electrons) will collide with the neutral gas having properties of 2nd  Species with index 1 (e.g., argon ion)and 3rd Species ( index 2) will similarly interact with the neutral gas defined by 2nd Species (index 1). This simplifies modeling by treating the gas as a fluid using the physical properties of an existing species (typically ions). To explicitly define neutral atoms (e.g., neutral argon), you can add a separate species in the [species] section with zero normalized density and dummy values for other parameters, ensuring it does not participate in the simulation as particles. Note: Neutrals are not simulated as particles but only act as background gas for MCC purposes.`|
 
-## `[species]`
+## `[Sepcies]`
 
-Each line represents a species and its properties in the following format:
+| Parameter               | Description                                                       |
+| ----------------------- | ----------------------------------------------------------------- |
+| `count`                 | Total number of species to define                                 |
+| `species_X.name`        | Name of the species (e.g., `electron`, `ion`)                     |
+| `species_X.mass`        | Mass of the species in kg                                         |
+| `species_X.num`         | Number of particles for the species                               |
+| `species_X.temp`        | Initial temperature in eV                                         |
+| `species_X.charge_sign` | Charge sign (`-1` for electrons, `+1` for ions, `0` for neutrals) |
+| `species_X.normden`     | Normalized density (with respect to electron density)             |
+| `species_X.vs`          | Streaming velocity (normalized)                                   |
+| `species_X.loadtype`    | Particle distribution type: `uniform` or other supported types    |
 
-  ```
-  name, mass, number_of_particles, temperature, charge_sign, normalized density (w.r.t electron density), streaming_velocity, load_type
-  ```
-  
-Example species configuration:
-  
-  ```
-  electron, 9.10938215E-31, 50000, 1, -1, 1, -10, uniform
-  ion, 6.63352090e-26, 50000, 0, 1, 0, 0, uniform
-  beam, 9.10938215E-31, 50000, 1, -1, 1, 10, uniform
-  ```
 (Note : Electron should be in the first line and Ion should be in the 2nd line and all other species will go after that.)
 ## `Normalized density :`
 `ion density , n_i0 = plasma density, so for two component electron-ion plasma n_e0 = n_i0 => 1 = n_i0/n_e0 => normalized electron density is 1 by default and normalized ion density (wrt electron) set to zero as ion density is set equal to plasma density and  so it remains fixed and doesnot change with respect to electon density. For example if our system is multicomponent and consist of 5 species as below`
