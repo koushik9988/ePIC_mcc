@@ -21,6 +21,25 @@ This repository contains an electrostatic 1D Particle-in-Cell (PIC) code develop
 - NumPy
 - Scipy
 
+## Directory Structure
+
+```
+project_root/
+├── CMakeLists.txt         # Build configuration
+├── Doxyfile               # Doxygen documentation settings
+├── include/               # Header files
+├── src/                   # Core source files
+├── linearalgebra/         # Custom matrix and solver routines
+├── cross_section          # Cross section data for different gases
+├── python_scripts/        # Postprocessing and visualization scripts
+├── inputfiles/            # Sample INI configuration files
+├── tests/                 # Unit and performance tests
+├── build/                 # Out-of-source build directory
+├── data/                  # Example output and plots
+├── LICENSE
+└── README.md
+```
+
 
 ### Installation
 1. Clone the repository:
