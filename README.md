@@ -12,7 +12,7 @@ This repository contains an electrostatic 1D Particle-in-Cell (PIC) code develop
 ## Requirements
 - Python3 : Required for data processing, and data visualization. 
 - python3-dev : Provides Python development headers needed for matplotlibcpp.
-- GNU C++ compiler / clang
+- GNU C++ compiler / clang (C++17 standards)
 - [CMake](https://cmake.org/)
 - [HDF5](https://www.hdfgroup.org/solutions/hdf5/)
 - [matplotlibcpp](https://github.com/lava/matplotlib-cpp)
@@ -20,6 +20,25 @@ This repository contains an electrostatic 1D Particle-in-Cell (PIC) code develop
 - Matplotlib
 - NumPy
 - Scipy
+
+## Directory Structure
+
+```
+project_root/
+├── CMakeLists.txt         # Build configuration
+├── Doxyfile               # Doxygen documentation settings
+├── include/               # Header files
+├── src/                   # Core source files
+├── linearalgebra/         # Custom matrix and solver routines
+├── cross_section          # Cross section data for different gases
+├── python_scripts/        # Postprocessing and visualization scripts
+├── inputfiles/            # Sample INI configuration files
+├── tests/                 # Unit and performance tests
+├── build/                 # Out-of-source build directory
+├── data/                  # Example output and plots
+├── LICENSE
+└── README.md
+```
 
 
 ### Installation
@@ -146,6 +165,9 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 | `elastic` | Enable elastic collisions (`true` and `false`) |
 | `excitation` | Enable excitation collisions |
 | `ionization` | Enable ionization |
+| `pion_elastic` | Enable ionization |
+| `e_detach_collision` | Enable ionization |
+| `GAS_TYPE` | GAS TYPE ( currently argon and hydrogen  is supported) |
 | `GAS_DENSITY` | Neutral gas density (e.g., `1e20`) |
 | `collgroup ` | particle collision group in a pair of two|
 
@@ -153,17 +175,18 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 
 ## `[Sepcies]`
 
-| Parameter               | Description                                                       |
-| ----------------------- | ----------------------------------------------------------------- |
-| `count`                 | Total number of species to define                                 |
-| `species_X.name`        | Name of the species (e.g., `electron`, `ion`)                     |
-| `species_X.mass`        | Mass of the species in kg                                         |
-| `species_X.num`         | Number of particles for the species                               |
-| `species_X.temp`        | Initial temperature in eV                                         |
-| `species_X.charge_sign` | Charge sign (`-1` for electrons, `+1` for ions, `0` for neutrals) |
-| `species_X.normden`     | Normalized density (with respect to electron density)             |
-| `species_X.vs`          | Streaming velocity (normalized)                                   |
-| `species_X.loadtype`    | Particle distribution type: `uniform` or other supported types    |
+| Parameter                   | Description                                                                |
+| ----------------------------| ---------------------------------------------------------------------------|
+| `count`                     | Total number of species to define                                          |
+| `species_X.name`            | Name of the species (e.g., `electron`, `ion`)                              |
+| `species_X.mass`            | Mass of the species in kg                                                  |
+| `species_X.num`             | Number of particles for the species                                        |
+| `species_X.temp`            | Initial temperature in eV                                                  |
+| `species_X.charge_sign`     | Charge sign (`-1` for electrons, `+1` for ions, `0` for neutrals)          |
+| `species_X.normden`         | Normalized density (with respect to electron density)                      |
+| `species_X.vs`              | Streaming velocity (normalized)                                            |
+| `species_X.loadtype_pos`    | Particle position load type: `uniform` or other supported types    |
+| `species_X.loadtype_vel`    | Particle initial vecocity load type: `uniform` or other supported types    |
 
 |`X is the species index starting from 0. The first two species must be electron and ion respectively. Additional species (e.g., beams or negative ions) follow. Neutrals are specified with charge_sign = 0 and normden = 0 and are used only for background collisions.`|
 # `Example`
@@ -179,7 +202,8 @@ species_0.temp = 1
 species_0.charge_sign = -1
 species_0.normden = 1
 species_0.vs = 10
-species_0.loadtype = uniform
+species_0.loadtype_pos = uniform
+species_0.loadtype_vel = 0.0sin(0)
 
 species_1.name = ion
 species_1.mass = 1.661E-27
@@ -188,7 +212,8 @@ species_1.temp = 0.0
 species_1.charge_sign = 1
 species_1.normden = 0
 species_1.vs = 0
-species_1.loadtype = uniform
+species_1.loadtype_pos = uniform
+species_1.loadtype_vel = 0.0sin(0)
 
 species_2.name = negion
 species_2.mass = 1.661E-27
@@ -197,7 +222,8 @@ species_2.temp = 0.026
 species_2.charge_sign = -1
 species_2.normden = 0.5
 species_2.vs = 0
-species_2.loadtype = uniform
+species_2.loadtype_pos = uniform
+species_2.loadtype_vel = 0.0sin(0)
 
 species_3.name = beam
 species_3.mass = 1.661E-27
@@ -206,7 +232,8 @@ species_3.temp = 0.026
 species_3.charge_sign = -1
 species_3.normden = 0.4
 species_3.vs = 10
-species_3.loadtype = uniform
+species_3.loadtype_pos = uniform
+species_3.loadtype_vel = 0.0sin(0)
 
 species_4.name = neutralgas
 species_4.mass = 3.347E-27
@@ -215,7 +242,8 @@ species_4.temp = 0.000
 species_4.charge_sign = 0
 species_4.normden = 0
 species_4.vs = 0
-species_4.loadtype = uniform
+species_4.loadtype_pos = uniform
+species_4.loadtype_vel = 0.0sin(0)
 ```
 ## `Normalized density :`
 `ion density , n_i0 = plasma density, so for two component electron-ion plasma n_e0 = n_i0 => 1 = n_i0/n_e0 => normalized electron density is 1 by default and normalized ion density (wrt electron) set to zero as ion density is set equal to plasma density and  so it remains fixed and doesnot change with respect to electon density. For example if our system is multicomponent and consist of 5 species as below`
