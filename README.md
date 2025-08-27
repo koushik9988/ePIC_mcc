@@ -12,7 +12,7 @@ This repository contains an electrostatic 1D Particle-in-Cell (PIC) code develop
 ## Requirements
 - Python3 : Required for data processing, and data visualization. 
 - python3-dev : Provides Python development headers needed for matplotlibcpp.
-- GNU C++ compiler / clang
+- GNU C++ compiler / clang (C++17 standards)
 - [CMake](https://cmake.org/)
 - [HDF5](https://www.hdfgroup.org/solutions/hdf5/)
 - [matplotlibcpp](https://github.com/lava/matplotlib-cpp)
