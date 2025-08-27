@@ -165,6 +165,9 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 | `elastic` | Enable elastic collisions (`true` and `false`) |
 | `excitation` | Enable excitation collisions |
 | `ionization` | Enable ionization |
+| `pion_elastic` | Enable ionization |
+| `e_detach_collision` | Enable ionization |
+| `GAS_TYPE` | GAS TYPE ( currently argon and hydrogen  is supported) |
 | `GAS_DENSITY` | Neutral gas density (e.g., `1e20`) |
 | `collgroup ` | particle collision group in a pair of two|
 
