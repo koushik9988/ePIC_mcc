@@ -4,10 +4,10 @@ project(ePIC++ LANGUAGES CXX)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g -O2")
 
 # Source files
-file(GLOB SOURCES "src/*.cpp")
+file(GLOB SOURCES "src/*.cpp" "cross_section/*.cpp")
 
 # Find Python with Development and NumPy components
 find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
@@ -44,6 +44,7 @@ message(STATUS "Found FFTW3: ${FFTW_VERSION}")
 include_directories(
     include
     linearalgebra
+    cross_section
     ${HDF5_INCLUDE_DIRS}
     ${Python3_INCLUDE_DIRS}
     ${Python3_NumPy_INCLUDE_DIRS}

@@ -34,7 +34,7 @@ Output::Output(const std::filesystem::path& outputfolder, Domain& domain) : outp
     int sp_no = domain.species_no;
     int t_step = int(domain.NUM_TS/domain.write_interval) + 1;
     
-    store_ke = Matrix<double>(t_step,sp_no + 2);
+    store_ke = Matrix<double>(t_step,3*sp_no + 2);
     //store_m = Matrix<double>(t_step,sp_no + 1);
     store_m = Matrix<double>(t_step, sp_no * 3 + 1); //new structure to allocate extra memeory for 3-momentum component
 
@@ -79,14 +79,22 @@ void Output::write_species_metadata(std::vector<Species> &species_list)
         species_group = metadata_species.createGroup(species_group_name);
     
         // Write attributes specific to the species
-        species_group.createAttribute("name", PredType::C_S1, DataSpace(H5S_SCALAR)).write(PredType::C_S1, sp.name.c_str());
-        species_group.createAttribute("mass", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &sp.mass);
+        //species_group.createAttribute("name", PredType::C_S1, DataSpace(H5S_SCALAR)).write(PredType::C_S1, sp.name.c_str());
+        species_group.createAttribute("mass", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &sp.defaultmass);
         species_group.createAttribute("charge", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &sp.charge);
-        species_group.createAttribute("spwt", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &sp.spwt);
+        species_group.createAttribute("spwt", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &sp.defaultspwt);
         species_group.createAttribute("temperature", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &sp.temp);
         species_group.createAttribute("density", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &sp.fract_den);
         species_group.createAttribute("num_particles", PredType::NATIVE_INT, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_INT, &sp.numparticle);
         species_group.createAttribute("streaming_velocity", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &sp.vs);
+        //species_group.createAttribute("pos_init", PredType::C_S1, DataSpace(H5S_SCALAR)).write(PredType::C_S1, sp.initialization_pos.c_str());
+        //species_group.createAttribute("vel_init", PredType::C_S1, DataSpace(H5S_SCALAR)).write(PredType::C_S1, sp.initialization_vel.c_str());
+        StrType strdatatype(PredType::C_S1, H5T_VARIABLE); // Define variable-length string type
+
+        species_group.createAttribute("name", strdatatype, DataSpace(H5S_SCALAR)).write(strdatatype, sp.name);
+        species_group.createAttribute("pos_init", strdatatype, DataSpace(H5S_SCALAR)).write(strdatatype, sp.initialization_pos);
+        species_group.createAttribute("vel_init", strdatatype, DataSpace(H5S_SCALAR)).write(strdatatype, sp.initialization_vel);
+
 
         // Add species name to species_order vector
         species_order.push_back(sp.name);
@@ -117,21 +125,25 @@ void Output::write_field_data(int ts)
     
     std::string pot_group_name  = "pot";
     std::string efield_group_name  = "efield";
+    //std::string coll_rate_group_name = "coll_rate";
 
     Group pot_subgroup;
     Group efield_subgroup;
+    //Group collrate_subgroup;
 
     if (!field_data_group.exists(pot_group_name))
     {
         // Subgroup doesn't exist, create it
         pot_subgroup = field_data_group.createGroup(pot_group_name);
         efield_subgroup = field_data_group.createGroup(efield_group_name);
+        //collrate_subgroup = field_data_group.createGroup(coll_rate_group_name);
     }
     else
     {
         // Subgroup already exists, retrieve it
         pot_subgroup = field_data_group.openGroup(pot_group_name);
         efield_subgroup = field_data_group.openGroup(efield_group_name);
+        //collrate_subgroup = field_data_group.openGroup(coll_rate_group_name);
     }
     
     //pot_subgroup = field_data_group.createGroup(subgroup_name);
@@ -145,13 +157,16 @@ void Output::write_field_data(int ts)
 
     DataSpace dataspace_pot(Rank, dims_den);
     DataSpace dataspace_efield(Rank, dims_den);
+    //DataSpace dataspace_collrate(Rank, dims_den);
 
     H5::DataSet dataset_pot = pot_subgroup.createDataSet(std::to_string(ts), H5::PredType::NATIVE_DOUBLE, dataspace_pot);
     H5::DataSet dataset_efield = efield_subgroup.createDataSet(std::to_string(ts), H5::PredType::NATIVE_DOUBLE, dataspace_efield);
+    //H5::DataSet dataset_collrate = collrate_subgroup.createDataSet(std::to_string(ts), H5::PredType::NATIVE_DOUBLE, dataspace_collrate);
 
     // Prepare data buffer
     std::vector<double> pot(ni);
     std::vector<double> efield(ni);
+    //std::vector<double> collrate(ni);
 
     //density = species.den;
 
@@ -159,12 +174,14 @@ void Output::write_field_data(int ts)
     for (int i = 0; i < ni; ++i) 
     {
         pot[i] = domain.phi(i);
-        efield[i] = domain.ef(i);  
+        efield[i] = domain.ef(i);
+        //collrate[i] = domain.collision_rate(i);  
     }
 
     // Write the density data to the dataset
     dataset_pot.write(pot.data(), H5::PredType::NATIVE_DOUBLE);
     dataset_efield.write(efield.data(), H5::PredType::NATIVE_DOUBLE);
+    //dataset_collrate.write(collrate.data(), H5::PredType::NATIVE_DOUBLE);
 }
 
 //-----------------den data----------------------------------------
@@ -213,6 +230,53 @@ void Output::write_den_data(int ts,  Species& species)
     // Write the density data to the dataset
     dataset_den.write(density.data(), H5::PredType::NATIVE_DOUBLE);
 }
+
+
+//##############################
+void Output::write_collrate_data(int ts, Species& species)
+{
+    // Subgroup name: coll_rate_<species>
+    std::string subgroup_name = "coll_rate_" + species.name;
+
+    Group collrate_subgroup;
+
+    // Check if the group already exists in the map
+    auto it = collrate_subgroups.find(species.name);
+    if (it != collrate_subgroups.end()) 
+    {
+        // Group already exists, retrieve it from the map
+        collrate_subgroup = it->second;
+    }
+    else 
+    {
+        // Group doesn't exist, create it and store it in the map
+        collrate_subgroup = field_data_group.createGroup(subgroup_name);
+        collrate_subgroups[species.name] = collrate_subgroup;
+    }
+
+    hsize_t ni = domain.ni;
+    hsize_t dims[1] = {ni};
+    hsize_t Rank = 1;
+
+    DataSpace dataspace(Rank, dims);
+
+    // Create dataset for this timestep
+    H5::DataSet dataset_collrate = collrate_subgroup.createDataSet(std::to_string(ts), H5::PredType::NATIVE_DOUBLE, dataspace);
+
+    // Prepare buffer
+    std::vector<double> collrate(ni);
+
+    // Fill with values from domain
+    for (int i = 0; i < ni; ++i) 
+    {
+        collrate[i] = species.coll_rate(i);
+    }
+
+    // Write to HDF5
+    dataset_collrate.write(collrate.data(), H5::PredType::NATIVE_DOUBLE);
+}
+
+//##############################
 
 
 // vel data 
@@ -285,7 +349,7 @@ void Output::write_particle_data(int ts, Species& species)
     }
 
     // Create datasets for particle positions and velocities
-    hsize_t dims_phase[2] = {species.part_list.size(), 4}; //here 2 => 1 for pos and 1 for vel
+    hsize_t dims_phase[2] = {species.part_list.size(), 5}; //here 4 => 1 for pos and 3 for vel + 1 extra for particle id
     //hsize_t dims_vel[2] = {species.part_list.size(), 1};
     hsize_t Rank = 2;
 
@@ -306,6 +370,7 @@ void Output::write_particle_data(int ts, Species& species)
         phase_data.push_back(p.vx);
         phase_data.push_back(p.vy);
         phase_data.push_back(p.vz);
+        phase_data.push_back(p.id); // Store particle id
     }
 
     dataset_phase.write(phase_data.data(), H5::PredType::NATIVE_DOUBLE);
@@ -319,7 +384,7 @@ void Output::write_ke()
 
     // Define the dimensions of the dataset
     hsize_t ny = int(domain.NUM_TS/domain.write_interval) + 1; //rows
-    hsize_t nx = hsize_t(domain.species_no + 2); //column
+    hsize_t nx = hsize_t(3*domain.species_no + 2); //column
 
     hsize_t dims_energy[2] = {ny, nx}; // Assuming all rows have the same length
 
@@ -360,25 +425,31 @@ void Output::printmatrix(int row, int col, double **matrix)
     }
 }
 
+
 void Output::storeKE_to_matrix(int ts, std::vector<Species> &species_list)
 {
-    
+    // Determine normalization species
     auto norm_species = (domain.normscheme == 2 || domain.normscheme == 4) ? species_list[1] : species_list[0];
 
-    int k = ts/domain.write_interval;
+    // Timestep index for storage
+    int k = ts / domain.write_interval;
 
-    store_ke(k,0) = ts * domain.DT;
-    //store_ke[][] = domain.ComputePE(norm_species);
-    //output.store_ke[int(index/write_interval)][0] = ts * domain.DT;
-    //display::print(k);
-    int j = 1 ;
+    // Store timestep value
+    store_ke(k, 0) = ts * domain.DT;
+
+    //Store kinetic energy for each species (3 components each)
+    int j = 1;  // Start after timestep column
     for (Species &sp : species_list)
     {
-        store_ke(k,j) = sp.Compute_KE(norm_species);
-        j++;
-        //cout<<output.store_ke[k][j]<<",";
+        vec<double> ke = sp.Compute_KE(norm_species);  // Returns KE vector [x, y, z]
+        store_ke(k, j)     = ke(0);  // KE in x-direction
+        store_ke(k, j + 1) = ke(1);  // KE in y-direction
+        store_ke(k, j + 2) = ke(2);  // KE in z-direction
+        j += 3;  // Increment by 3 for next species
     }
-    store_ke(k,j) = domain.ComputePE(norm_species);
+
+    // Store potential energy in the last two column
+    store_ke(k, j) = domain.ComputePE(norm_species);
 }
 
 //------------
@@ -440,6 +511,85 @@ void Output::write_m()
     //delete[] momentum_data;
 }
 
+void Output::write_avg_collision_freq(int ts)
+{
+    std::string datasetName = "avg_collision_freq";
+    
+    hsize_t ny = int(domain.NUM_TS / domain.write_interval) + 1; // rows (time steps)
+    hsize_t dims[2] = {ny, 2}; // 2 columns: [time, frequency]
+
+    // Create dataspace for full dataset
+    DataSpace dataspace(2, dims);
+
+    // Create or open the dataset
+    H5::DataSet dataset;
+    if (!time_group.exists(datasetName))
+    {
+        dataset = time_group.createDataSet(datasetName, H5::PredType::NATIVE_DOUBLE, dataspace);
+    }
+    else
+    {
+        dataset = time_group.openDataSet(datasetName);
+    }
+
+    // Prepare the data for this timestep
+    int k = ts / domain.write_interval;
+    double data[1][2];
+    data[0][0] = ts * domain.DT;                    // Time
+    data[0][1] = domain.avg_coll_freq / domain.W;   // Average collision frequency
+
+    // Define hyperslab in the dataset where this row will be written
+    hsize_t offset[2] = {static_cast<hsize_t>(k), 0};
+    hsize_t count[2] = {1, 2};
+    dataspace.selectHyperslab(H5S_SELECT_SET, count, offset);
+
+    // Create memory dataspace for just this row
+    DataSpace memspace(2, count);
+
+    // Write the row
+    dataset.write(data, H5::PredType::NATIVE_DOUBLE, memspace, dataspace);
+}
+
+
+
+void Output::write_alpha_vs_time(int ts)
+{
+    std::string datasetName = "electronegativity";
+    
+    hsize_t ny = int(domain.NUM_TS / domain.write_interval) + 1; // rows (time steps)
+    hsize_t dims[2] = {ny, 2}; // 2 columns: [time, alpha]
+
+    // Create dataspace for full dataset
+    DataSpace dataspace(2, dims);
+
+    // Create or open the dataset
+    H5::DataSet dataset;
+    if (!time_group.exists(datasetName))
+    {
+        dataset = time_group.createDataSet(datasetName, H5::PredType::NATIVE_DOUBLE, dataspace);
+    }
+    else
+    {
+        dataset = time_group.openDataSet(datasetName);
+    }
+
+    // Prepare the data for this timestep
+    int k = ts / domain.write_interval;
+    double data[1][2];
+    data[0][0] = ts * domain.DT;                    // Time
+    data[0][1] = domain.electronegativity;   // Electronegativity value
+
+    // Define hyperslab in the dataset where this row will be written
+    hsize_t offset[2] = {static_cast<hsize_t>(k), 0};
+    hsize_t count[2] = {1, 2};
+    dataspace.selectHyperslab(H5S_SELECT_SET, count, offset);
+
+    // Create memory dataspace for just this row
+    DataSpace memspace(2, count);
+
+    // Write the row
+    dataset.write(data, H5::PredType::NATIVE_DOUBLE, memspace, dataspace);
+}
 
 
 
@@ -522,15 +672,20 @@ void Output::diagnostics(int ts, std::vector<Species> &species_list)
 
         if(domain.bc =="open")
         {
-            std::cout<<"\t"<<std::fixed << std::setprecision(precision)<<"rhoL|currentL:"<<domain.vL<<"|"<<domain.I_leftwall<<"\t"<<"rhoR|currentR:"<<domain.vR<<"|"<<domain.I_rightwall;
+            //std::cout<<"\t"<<std::fixed << std::setprecision(precision)<<"rhoL|currentL:"<<domain.vL<<"|"<<domain.I_leftwall<<"\t"<<"rhoR|currentR:"<<domain.vR<<"|"<<domain.I_rightwall;
         }
 
-        if(domain.bc == "open" || domain.enable_ionization_collision  == true)
+        if(domain.bc == "open" || domain.enable_ionization_collision  == true || domain.enable_e_detach_collision == true)
         {
             for (Species& sp : species_list)
             {
                 std::cout << " n_" << std::setw(4) << sp.name << ":" << sp.part_list.size();
             }
+        }
+        
+        if(domain.enable_e_detach_collision == true)
+        {
+            std::cout << " alpha:" << domain.electronegativity;
         }
 
         if(domain.normscheme == 5)
@@ -543,24 +698,29 @@ void Output::diagnostics(int ts, std::vector<Species> &species_list)
         }
 
         double total_kinetic_energy = 0.0;
+        vec<double> total_ke_components(3);
         double total_px = 0.0;
         double total_py = 0.0;
         double total_pz = 0.0;
-        double potential_energy;
+        double potential_energy_val;
 
         if ((domain.bc == "pbc" || domain.bc == "rbc") && Energy_plot == 1)
         {
-            potential_energy = domain.ComputePE(norm_species);
+            potential_energy_val = domain.ComputePE(norm_species);
             for (Species& sp : species_list)
             {
-                double ke = sp.Compute_KE(norm_species);
-                total_kinetic_energy += ke;
-                std::cout << " KE_" << std::setw(4) << sp.name << ": " << ke;
+                vec<double> ke = sp.Compute_KE(norm_species);
+                total_ke_components += ke;
+                total_kinetic_energy += ke(0) + ke(1) + ke(2);
+                
+                //std::cout << " KE_" << std::setw(4) << sp.name << ": " << ke(0) + ke(1) + ke(2);
             }
 
-            std::cout << " Potential energy: " << potential_energy;
-            std::cout << " Total_energy: " << total_kinetic_energy + potential_energy;
+            std::cout << " KE_: " << total_kinetic_energy;
+            std::cout << " PE_: " << potential_energy_val;
+            std::cout << " TE_: " << total_kinetic_energy + potential_energy_val;
 
+            /*
             for (Species& sp : species_list)
             {
                 //total_momentum += sp.Compute_Momentum(norm_species);
@@ -568,15 +728,25 @@ void Output::diagnostics(int ts, std::vector<Species> &species_list)
                 total_px += px;
                 total_py += py;
                 total_pz += pz;
-            }
-            std::cout << " px: " << total_px << " py: " << total_py << " pz: " << total_pz<<" P:"<<sqrt(total_px*total_px + total_py*total_py + total_pz*total_pz);
+            }*/
+            //std::cout << " px: " << total_px << " py: " << total_py << " pz: " << total_pz<<" P:"<<sqrt(total_px*total_px + total_py*total_py + total_pz*total_pz);
             std::cout<< " delta_g:"<<domain.delta_g;
+            double average_coll_freq = domain.avg_coll_freq/domain.W;
+            //std::cout<< " \u03BD: "<< average_coll_freq;
+            nu_avg.push_back(average_coll_freq);
+
+            time_steps.push_back(static_cast<double>(ts));
+            kinetic_energy.push_back(total_kinetic_energy);
+            potential_energy.push_back(potential_energy_val);
+            total_energy.push_back(total_kinetic_energy + potential_energy_val);
+            Ke_x.push_back(total_ke_components(0));
+            Ke_y.push_back(total_ke_components(1));
+            Ke_z.push_back(total_ke_components(2));
             
         }
         std::cout << std::endl;
 
         //Plotting with matplotlibcpp
-        static std::vector<double> time;
         static std::vector<double> lenght;
         static std::vector<double> ke;
         static std::vector<double> pe;
@@ -588,6 +758,8 @@ void Output::diagnostics(int ts, std::vector<Species> &species_list)
         static std::vector<int> num1;
         static std::vector<int> num2;
 
+        
+
         //dft plot
         static std::vector<double> k;
         static std::vector<double> rho_k;
@@ -598,20 +770,20 @@ void Output::diagnostics(int ts, std::vector<Species> &species_list)
         std::vector<double> x1;
         std::vector<double> vx1;
 
-        time.push_back(ts * domain.DT);
+        //time.push_back(ts * domain.DT);
 
         if (Energy_plot == 1)
         {
             ke.push_back(total_kinetic_energy);
-            pe.push_back(potential_energy);
-            total_energie.push_back(total_kinetic_energy + potential_energy);
+            pe.push_back(potential_energy_val);
+            total_energie.push_back(total_kinetic_energy + potential_energy_val);
         }
 
-        if (domain.bc == "open")
-        {
-            num1.push_back(species_list[0].part_list.size());
-            num2.push_back(species_list[1].part_list.size());
-        }
+        //if (domain.bc == "open")
+        //{
+        //    num1.push_back(species_list[0].part_list.size());
+        //    num2.push_back(species_list[1].part_list.size());
+        //}
 
         if (phase_plot == 1 )
         {
@@ -621,7 +793,6 @@ void Output::diagnostics(int ts, std::vector<Species> &species_list)
             {
                 x.push_back(part.x);
                 vx.push_back(part.vx);
-            
             }
         }
 
@@ -669,15 +840,15 @@ void Output::diagnostics(int ts, std::vector<Species> &species_list)
             plt::clf();
             if (keflag == 1 && (domain.bc == "pbc" || domain.bc == "rbc") && domain.diagtype == "full")
             {
-                plt::named_plot("kinetic energy", time, ke, "r-");
+                plt::named_plot("kinetic energy", time_steps, kinetic_energy , "r-");
             }
             if (peflag == 1 && (domain.bc == "pbc" || domain.bc == "rbc") && domain.diagtype == "full")
             {
-                plt::named_plot("potential energy", time, pe, "b-");
+                plt::named_plot("potential energy", time_steps, potential_energy, "b-");
             }
             if (teflag == 1 && (domain.bc == "pbc" || domain.bc == "rbc" ) && domain.diagtype == "full")
             {
-                plt::named_plot("total energy", time, total_energie, "g-");
+                plt::named_plot("total energy", time_steps, total_energy, "g-");
             }
             plt::xlabel("Time");
             plt::ylabel("Energy");
@@ -707,6 +878,7 @@ void Output::diagnostics(int ts, std::vector<Species> &species_list)
             plt::clf();
             plt::scatter(x, vx, marker_size, scatter_keywords1);
             //plt::scatter(x1, vx1, marker_size, scatter_keywords2);
+            plt::xlim(0,domain.ni);
             plt::xlabel("x");
             plt::ylabel("v");
 
@@ -739,41 +911,29 @@ void Output::diagnostics(int ts, std::vector<Species> &species_list)
             plt::named_plot("potential", lenght, pot, "r-");
             //plt::named_plot("Electricfield", lenght, efield, "b-");
             plt::xlabel("x");
-            //plt::ylim(min_phi,max_phi);
+            //plt::ylim(-1000,1000);
             plt::ylabel("phi/Efield");
             plt::legend(); 
         }
 
-    
+        /*
         if(domain.bc == "open")
         {   
             plt::figure(5);
             plt::clf();
-            plt::named_plot("electron", time, num1, "r-");
-            plt::named_plot("ion", time, num2, "b-");
+            plt::named_plot("electron", time_steps, num1, "r-");
+            plt::named_plot("ion", time_steps, num2, "b-");
             //plt::named_plot("Electricfield", lenght, efield, "b-");
             plt::xlabel("time");
             plt::ylabel("simulation particle");
             plt::legend();
 
-        }
+        }*/
 
-        if(domain.bc == "open")
-        {   
-            plt::figure(6);
-            plt::clf();
-            plt::named_plot("electron", time, num1, "r-");
-            plt::named_plot("ion", time, num2, "b-");
-            //plt::named_plot("Electricfield", lenght, efield, "b-");
-            plt::xlabel("time");
-            plt::ylabel("simulation particle");
-            plt::legend();
-
-        }
-
+       
         if(dft_flag == 1 && domain.SolverType == "spectral")
         {
-            plt::figure(7);
+            plt::figure(6);
             plt::clf();
             plt::named_plot("fourier transformed charge density", k, rho_k, "r-");
             plt::xlabel("k");
@@ -781,6 +941,31 @@ void Output::diagnostics(int ts, std::vector<Species> &species_list)
             plt::legend(); 
         }
 
+
+        if (ke_components == 1)
+        {
+            plt::figure(7);
+            plt::clf();
+            plt::plot(time_steps, Ke_x, {{"label", "KE_x"}, {"color", "blue"}});
+            plt::plot(time_steps, Ke_y, {{"label", "KE_y"}, {"color", "red"}});
+            plt::plot(time_steps, Ke_z, {{"label", "KE_z"}, {"color", "green"}});
+            plt::title("Kinetic Energy Components vs Time");
+            plt::xlabel("Time Step");
+            plt::ylabel("Kinetic Energy component");
+            plt::legend({{"loc", "upper right"}});
+        }
+        
+        if(coll_freq_plot == 1)
+        {
+            plt::figure(8);
+            plt::clf();
+            plt::named_plot("average collision frequency", time_steps, nu_avg, "r-");
+            plt::title("Average Collision Frequency vs Time");
+            plt::xlabel("Time Step");
+            plt::ylabel("\u03BD");
+            plt::legend({{"loc", "upper right"}});
+        }
+        
         plt::pause(0.1);
 
         // Show plot
@@ -788,3 +973,19 @@ void Output::diagnostics(int ts, std::vector<Species> &species_list)
     }
 }
 
+
+
+void Output::write_extra(double z1, double z2, double z3)
+{
+    // Create a subgroup under metadata or fielddata
+    Group extra_group = file.createGroup("/extra_results");
+
+    // Write attributes
+    extra_group.createAttribute("z1", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &z1);
+
+    extra_group.createAttribute("z2", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &z2);
+
+    extra_group.createAttribute("z3", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &z3);
+
+    extra_group.close();
+}

@@ -51,6 +51,8 @@ class Domain
     vec<double> rho;
     vec<double> ef;
 
+    vec<double> collision_rate;
+
     //temp data
     vec<double> dft_k;
     vec<double> dft_value;
@@ -204,15 +206,38 @@ class Domain
     bool enable_excitation_collision; // Flag for excitation collisions
     bool enable_ionization_collision; // Flag for ionization collisions
 
+    bool enable_pion_elastic; 
+    bool enable_nion_elastic;
+    bool enable_e_detach_collision;
+
     /// @brief difference between velocity  mangnitude before and after collision
     double delta_g;
    
     /// Neutral gas density Gas density in m^-3    
-    double GAS_DENSITY;  
+    double GAS_DENSITY;
+    //double GAS_MASS;  
 
     int ionfixed = 0;
 
     double max_electron_coll_freq;
+
+    std::string GAS_TYPE;
+
+    double B, theta, azimuth;
+
+    double avg_coll_freq;
+    
+    int N_ecoll, N_ioncoll, N_negioncoll, N_beamcoll;
+
+    double tau; //beam
+
+    double phi_norm;
+
+    double electronegativity;
+
+    double Calculate_alpha(Species &species1, Species &species2);
+
+
     
 };
 

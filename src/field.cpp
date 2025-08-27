@@ -12,6 +12,7 @@ void FieldSolve::Spectral()
  
     double *rho = fftw_alloc_real(ni);
     double *phi = fftw_alloc_real(ni);
+   
     fftw_complex *rho_k= (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (nr));
     fftw_complex *phi_k= (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (nr));
 
@@ -25,17 +26,23 @@ void FieldSolve::Spectral()
     fftw_execute(forward);
     fftw_destroy_plan(forward);
 
-
+    //display::print(phi_k[0][0]);
     // Solve in Fourier space
     for (int k = 0; k <= ni/2; ++k)
     {
+        //double kx = 2.0 * M_PI * k / L;
+        //double denom = (k == 0) ? 1.0 : -(kx * kx); // Avoid divide-by-zero at k=0
+        double dx = domain.dx;
         double kx = 2.0 * M_PI * k / L;
-        double denom = (k == 0) ? 1.0 : -(kx * kx); // Avoid divide-by-zero at k=0
+        double denom = (k == 0) ? 1.0 : -kx*kx;//- (4/(dx*dx))*sin(kx*dx*0.5)*sin(kx*dx*0.5);
 
         phi_k[k][0] = (k == 0) ? 0.0 : rho_k[k][0] / denom;
         phi_k[k][1] = (k == 0) ? 0.0 : rho_k[k][1] / denom;
+
         domain.dft_k(k) = kx;
     }
+
+    //display::print(phi_k[0][0]);
 
     for( int i = 0 ; i < nr ; i++)
     {
@@ -47,17 +54,10 @@ void FieldSolve::Spectral()
     fftw_execute(backward);
     fftw_destroy_plan(backward);
 
-    // Normalize
+    domain.phi = 0;
     for (int i = 0; i < ni; ++i)
     {
-        phi[i] *= norm;
-    }
-
-    domain.phi = 0;
-
-    for(int i = 0 ; i < ni ; i++)
-    {
-        domain.phi(i) = phi[i];
+        domain.phi(i) = phi[i] * norm;
     }
 
     // Cleanup
@@ -76,50 +76,23 @@ void FieldSolve::Direct(int ts)
 
     vec<double> rhov(ni);
 
-    //boundary condition
-
-    
     double frequency = 13.56e6;
     double omega = 2.0 * Const::PI * frequency;
 
-
     double volatge = 100.0;  // Amplitude of the electric field pulse
     
-    //double t_start = 10;  // Start time of the pulse 
-    //double t_end = 5000;    // End time of the pulse
-    //double current_time = ts * domain.DT;  // Current time in simulation
-
     if(domain.bc == "pbc")
     {  
-        /*
-
-        if (current_time >= t_start && current_time <= t_end)
-        {
-            // Apply pulse at the left boundary for the duration of t_start to t_end
-            rhov(0) = 0*pulse_amplitude * sin(omega*ts*domain.DT) * (Const::eV / (Const::K_b*Const::EV_to_K));
-            rhov(ni-1) = 0*pulse_amplitude * cos(omega*ts*domain.DT) * (Const::eV / (Const::K_b*Const::EV_to_K));
-        }
-        else
-        {
-            rhov(0) = 0;
-            rhov(ni-1) = 0;
-        }
-        
-        */
-        //domain.vL =  volatge*sin(omega*ts*domain.DT)*(Const::eV/(Const::K_b*Const::EV_to_K));
         rhov(0) = 0;//domain.vL;// 10*sin(omega*ts*domain.DT*1)*(Const::eV/(Const::K_b*Const::EV_to_K));
         rhov(ni-1) = 0;//100*cos(omega*ts*domain.DT*10);   
     }
     if(domain.bc == "open")
     {
-        //rhov(0) =  10*sin(omega*ts*domain.DT*10)*(Const::eV/(Const::K_b*Const::EV_to_K));//domain.vL;
-        //domain.vL =  volatge*sin(omega*ts*domain.DT)*(Const::eV/(Const::K_b*Const::EV_to_K));
-        //domain.vR = 10000*(Const::eV/(Const::K_b*Const::EV_to_K));
-        rhov(0) = domain.vL; 
-        rhov(ni-1) = domain.vR;//domain.vR;  
+        //rhov(0) = domain.vL * domain.phi_norm;
+        rhov(0) = domain.vL*domain.phi_norm ;//* sin(omega*ts*domain.DT); 
+        rhov(ni-1) = domain.vR * domain.phi_norm;
     }
-
-                 
+           
     for( int i = 1 ; i < ni-1 ; i++)
     {
         rhov(i) = -domain.rho(i)*dx2*((domain.L*domain.L)/(domain.LDe*domain.LDe));
@@ -276,27 +249,41 @@ void FieldSolve::cgsolver()
 //void FieldSolve::CalculateEfield(double *phi, double *ef)
 void FieldSolve::CalculateEfield()
 {
-    //std::string bc  = domain.bc;
-    /*Apply central difference to the inner nodes*/
-    domain.ef = 0;
-    for(int i=1; i<domain.ni-1; i++)
+    
+        domain.ef = 0;
+        for(int i=1; i<domain.ni-1; i++)
+        {
+            domain.ef(i) = -((domain.LDe*domain.LDe)/(domain.L*domain.L))*(domain.phi(i+1)-domain.phi(i-1))/(2*domain.dx);
+        }
+        
+        /*for continous bounndary
+        the point 0 and ni-1 is same */
+        if(domain.bc =="pbc")
+        {
+            domain.ef(0) = -((domain.LDe*domain.LDe)/(domain.L*domain.L))*(domain.phi(1)-domain.phi(domain.ni-2))/(2*domain.dx);
+            domain.ef(domain.ni-1) = domain.ef(0);
+        }
+        else if(domain.bc == "open" || domain.bc == "rbc")
+        {
+            domain.ef(0) = -((domain.LDe*domain.LDe)/(domain.L*domain.L))*(domain.phi(1)- domain.phi(0))/(domain.dx);
+            domain.ef(domain.ni-1) = -((domain.LDe*domain.LDe)/(domain.L*domain.L))*(domain.phi(domain.ni-1)-domain.phi(domain.ni-2))/(domain.dx);
+        }
+}
+
+
+void FieldSolve::AddPerturbation(int ts, int mode, double perturb_amplitude)
+{
+    double k0 = 2.0 * M_PI * mode / domain.xL;  
+    double amplitude = perturb_amplitude;
+    double phase = 0.0;
+
+    for (int i = 0; i < domain.ni; i++)
     {
-        domain.ef(i) = -((domain.LDe*domain.LDe)/(domain.L*domain.L))*(domain.phi(i+1)-domain.phi(i-1))/(2*domain.dx);
-    }
-       
-    /*for continous bounndary
-    the point 0 and ni-1 is same */
-    if(domain.bc =="pbc")
-    {
-        domain.ef(0) = -((domain.LDe*domain.LDe)/(domain.L*domain.L))*(domain.phi(1)-domain.phi(domain.ni-2))/(2*domain.dx);
-        domain.ef(domain.ni-1) = domain.ef(0);
-    }
-    else if(domain.bc == "open" || domain.bc == "rbc")
-    {
-        domain.ef(0) = -((domain.LDe*domain.LDe)/(domain.L*domain.L))*(domain.phi(1)- domain.phi(0))/(domain.dx);
-        domain.ef(domain.ni-1) = -((domain.LDe*domain.LDe)/(domain.L*domain.L))*(domain.phi(domain.ni-1)-domain.phi(domain.ni-2))/(domain.dx);
+        double x = i * domain.dx;
+        domain.phi(i) += amplitude * cos(k0 * x + phase);
     }
 }
+
 
 
 void FieldSolve::PotentialSolver(int ts)

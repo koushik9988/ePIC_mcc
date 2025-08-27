@@ -31,6 +31,7 @@ public:
     void cgsolver();
     void GaussElim();
     void Spectral();
+    void AddPerturbation(int ts,int mode, double perturb_amplitude);
 
 private:
     Domain &domain;

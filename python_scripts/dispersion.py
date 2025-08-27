@@ -19,7 +19,7 @@ metadata_group = f['/metadata']
 metadata_electron = f['/metadata_species/electron']
 metadata_ion = f['/metadata_species/ion']
 metadata_negion = f['/metadata_species/negion']
-#metadata_beam = f['/metadata_species/beam']
+metadata_beam = f['/metadata_species/beam']
 
 
 eps0 = constants('electric constant')
@@ -118,13 +118,31 @@ Omega /= wp # Normalized Omega
 K = K*(LD)  # Normalized K
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #+++++++++++++++++++++ Raw Analytic Part Calculation ++++++++++++++++++++++++++++++
-raw_analytic_EPW = True
-if raw_analytic_EPW:    
-    #epe = np.sqrt((we**2*(1 + 0.5*3*k**2*LD**2)))
-    epe = np.sqrt(we**2 + 2*(3/2)*(we*LD)**2*k**2)
-    #epe = np.sqrt(we**2)# + 2*(3/2)*(we*LD)**2*k**2)       
-    #epe = wla/we    # Electron Plasma Wave (Langmuir Wave)
 
+
+
+Bz = 0.001
+
+wec = e*Bz/me
+
+wic = e*Bz/mi
+
+omega_uh = np.sqrt(we**2 + wec**2)
+
+omega_lh = ((wec*wic)**(-1) + wp**(-2))**(-0.5)
+
+# Analytic EPW
+raw_analytic_EPW = False
+if raw_analytic_EPW:
+    epe = np.sqrt(omega_uh**2 + 3 * (we * LD)**2 * k**2)
+
+raw_analytic_upperhybrid = False
+if raw_analytic_upperhybrid:
+    wuh = np.full(len(k), omega_uh)
+
+raw_analytic_lowerhybrid = False
+if raw_analytic_lowerhybrid:
+    wlh = np.full(len(k), omega_lh)
 
 raw_analytic_PW = False
 if raw_analytic_PW:    
@@ -133,15 +151,15 @@ if raw_analytic_PW:
 
 
 #DAW = np.sqrt(Ti*e/md)*np.sqrt(nd/1e13)
-raw_analytic_IAW = True
+raw_analytic_IAW = False
 if raw_analytic_IAW:    
     epi = np.sqrt((Te*EV_TO_K*kb/mi)*(1/(1+k**2*LD**2)) + (Ti*EV_TO_K*kb/mi))*k
-    epi = np.sqrt((Te*EV_TO_K*kb/mi)*(1/(1+k**2*LD**2))*(ni0/ne0) + (Te*EV_TO_K*kb/mi)*(nn0/ne0))*k 
+    #epi = np.sqrt((Te*EV_TO_K*kb/mi)*(1/(1+k**2*LD**2))*(ni0/ne0) + (Te*EV_TO_K*kb/mi)*(nn0/ne0))*k 
     #epi = DAW*k
     #epi = wla/wp    # Electron Plasma Wave (Langmuir Wave)
 
-alp = 1#metadata_negion.attrs["density"]
-beta = 0#metadata_beam.attrs["density"]
+alp = metadata_negion.attrs["density"]
+beta = metadata_beam.attrs["density"]
 alpha = alp/(1+alp+beta)
 k1 = np.arange(0, 2000, 0.01)
 
@@ -175,9 +193,10 @@ mp.rc('legend', fontsize=10)
 
 #fig,ax = plt.subplots(figsize=figsize/25.4,constrained_layout=True,dpi=ppi)
 fig, ax = plt.subplots(figsize = figsize/10.4,constrained_layout=True,dpi=ppi)
-#c1 = plt.pcolor(K, Omega, Z,cmap='rainbow',shading='auto',vmin=np.min(Z),vmax=np.max(Z))##
+c1 = plt.pcolor(K, Omega, Z,cmap='rainbow',shading='auto',vmin=np.min(Z),vmax=np.max(Z))##
 #c1 = plt.pcolor(K, Omega, Z, cmap='rainbow',shading='auto',vmin= -6,vmax = 6)
-c1 = plt.contourf(K, Omega, Z, cmap='rainbow',shading='auto',vmin=np.min(Z),vmax=np.max(Z))
+#c1 = plt.contourf(K, Omega, Z, cmap='rainbow',shading='auto',vmin=np.min(Z),vmax=np.max(Z))
+#c1 = plt.contourf(K, Omega, Z, cmap='rainbow',shading='auto',vmin=-6,vmax=6)
 
 
 print(np.min(Z), np.max(Z))
@@ -214,6 +233,12 @@ if raw_analytic_FIAW:
     #plt.plot(k*LD, ep, color='k', linestyle='--', lw = 1.0, label='$EPW$')
     plt.plot(k1*LD, ilw/we, color='k', linestyle='dotted', lw = 1.0, label='$FIAW$')
 
+if raw_analytic_upperhybrid:
+     plt.plot(k*LD, wuh/we, color='k', linestyle='--', lw = 1.0, label='$upper\_hybrid$')
+
+if raw_analytic_lowerhybrid:
+     plt.plot(k*LD, wlh/we, color='k', linestyle='-.', lw = 1.0, label='$lower\_hybrid$')
+
 
 
 # Note: Changing vmin & vmax will change the depth of the plots.e
@@ -224,7 +249,7 @@ ax.set_xlabel('$k \lambda_{De}$')
 ax.set_ylabel('$\omega/\omega_{pe}$')
 #ax.set_xlim([0, np.max(K)])
 #ax.set_xlim([0,3])
-#ax.set_ylim([0,50])
+#ax.set_ylim([0,5])
 leg = ax.legend(loc='upper right',framealpha=0.5)
 plt.savefig(pjoin(path,'dispersion.png'),dpi=dpi)
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

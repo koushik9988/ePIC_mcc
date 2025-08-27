@@ -32,12 +32,14 @@ class Output
     std::map<std::string, Group> particle_groups;
     std::map<std::string, Group> den_subgroups;
     std::map<std::string, Group> vel_subgroups;
+    std::map<std::string, Group> collrate_subgroups;
 
     Output(const std::filesystem::path& outputfolder, Domain& domain);
     //~Output();
     void write_particle_data(int ts, Species& species);
     //void write_particle_data(H5::Group& group, int ts, Species& species);
     void write_den_data(int ts,  Species& species);
+    void write_collrate_data(int ts, Species& species);
     void write_vel_data(int ts,  Species& species);
     void write_field_data(int ts);
     //void write_ke(int ts,std::vector<Species> &species_list);
@@ -50,6 +52,11 @@ class Output
     void write_metadata(int NC, int NUM_TS, int write_int, int write_int_phase, double DT,double density, int save_fig, int normscheme, 
         int subcycleint,double LDe, double LDi, double wpe, double wpi,int spno, double GAS_DENSITY, double max_electron_collision_freq);
     void write_species_metadata(std::vector<Species>& species_list);
+
+    void write_avg_collision_freq(int ts);
+    void write_alpha_vs_time(int ts);
+
+    void write_extra(double z1, double z2, double z3);
 
     //data structure to temporarily store kinetic energy and momentum data.
 
@@ -71,6 +78,19 @@ class Output
     int phase_plot;
     int dft_flag;
     int species_index;
+    int ke_components;
+    int coll_freq_plot;
+
+
+
+    std::vector<double> time_steps;
+    std::vector<double> kinetic_energy;
+    std::vector<double> potential_energy;
+    std::vector<double> total_energy;
+    std::vector<double>Ke_x;
+    std::vector<double>Ke_y;
+    std::vector<double>Ke_z;
+    std::vector<double> nu_avg;
 
     private:
     //Species &species;

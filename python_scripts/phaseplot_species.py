@@ -86,32 +86,34 @@ def animate(i):
     data_phase = f[f"particle_{particle_type}/{j}"]
     datax = data_phase[:, 0]
     datavx = data_phase[:, 1]
+    ids = data_phase[:, 4].astype(int)  # assuming id is in column 4
+
+    # Example: color red if collided (id != 0), blue if not
+    colors = np.where(ids != 0, 'red', 'blue')
 
     den = f[f"fielddata/den_{particle_type}/{j}"]
     x = np.linspace(0, NC, len(den))
 
     ax_phase1.clear()
-    
-    ax_phase1.scatter(datax, datavx, marker='o', color='b', s = 1 , label=f"{particle_type} phase space")
+    ax_phase1.scatter(datax, datavx, c=colors, marker='o', s=1,
+                      label=f"{particle_type} phase space")
     ax_phase1.set_xlabel('$x$')
     ax_phase1.set_ylabel('$v$')
+    ax_phase1.set_xlim([0, NC])
     ax_phase1.legend(loc='upper right', framealpha=0.5)
-    title_text = 'time : {:.2f}\n TS: {:.4f}'.format(ts[i],j)
+    title_text = 'time : {:.2f}\n TS: {:.4f}'.format(ts[i], j)
     ax_phase1.set_title(title_text)
 
     ax.clear()
     pot = f[f"fielddata/pot/{j}"]
     ef = f[f"fielddata/efield/{j}"]
     x = np.linspace(0, NC, len(pot))
-    #ax.plot(x, pot[:], color='black', label="Potential")
     ax.plot(x, pot[:], color='red', label="efield")
-    #ax.set_ylim([phi_min,phi_max])
-    #ax.set_ylim([-10,10])
-    #ax.set_ylim([max(ef_min,phi_min), max(ef_max,phi_max)])
     ax.set_ylabel('$\phi$')
     ax.legend(loc='upper right', framealpha=0.5)
 
     return ax, ax_phase1
+
 
 def on_key(event):
     if event.key == 'enter':

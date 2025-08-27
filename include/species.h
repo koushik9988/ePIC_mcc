@@ -18,6 +18,7 @@
 #include <tuple>
 #include "slap.h"
 #include "domain.h"
+#include "slap.h"
 
 using namespace std;
 
@@ -35,18 +36,25 @@ class Particle
     double x;
     //double vel[3];
     double vx, vy, vz;
+    double mass;
+    double spwt; //specific weight
     //store velocity at (t-0.5dt)
     double pvx,pvy,pvz;
+
+    int id; //particle id
     //particle constructor
-    Particle(double x, double vx, double vy, double vz)
+    Particle(double x, double vx, double vy, double vz, int id, double mass = NAN , double spwt = NAN)
     {
         this->x = x;
         this->vx = vx;
         this->vy = vy;
         this->vz = vz;
-        //vel[0] = vx;
-        //vel[1] = vy;
-        //vel[2] = vz;
+        this->pvx = 0;
+        this->pvy = 0;
+        this->pvz = 0;
+        this->id = id; //default id
+        this->mass = mass;
+        this->spwt = spwt;
     }
 
 };
@@ -63,11 +71,11 @@ class Species
     /// species name
     string name;
     /// species mass
-    double mass;
+    double defaultmass;
     /// species charge
     double charge;
     /// @brief specific weight
-    double spwt;
+    double defaultspwt;
     /// @brief species temparature
     double temp;
     /// @brief density
@@ -77,7 +85,12 @@ class Species
     int numparticle;
     /// @brief 
     int charge_sig;
-    std::string initialization;
+
+    //collison rate
+    vec<double>coll_rate;
+    
+    std::string initialization_pos;
+    std::string initialization_vel;
 
     double vs;
     double fract_den;
@@ -105,7 +118,7 @@ class Species
      * @param temp temparature of species
      * @param numparticle number pf simulation particle
      */
-    Species(string name, double mass, double charge, double spwt, double temp, int numparticle, double vs, double fract_den, std:: string initialization, Domain &domain);
+    Species(string name, double defaultmass, double charge, double defaultspwt, double temp, int numparticle, double vs, double fract_den, std:: string initialization_pos, std:: string initialization_vel, Domain &domain);
 
     //declare member functions or methods
     /**
@@ -156,7 +169,8 @@ class Species
      * @brief function to compute kinetic energy
      * @param species normalizing species 
      */
-    double Compute_KE(Species &species);
+    //double Compute_KE(Species &species);
+    vec<double> Compute_KE(Species &species);
     /**
      * @brief function to compute momentum energy
      * @param species normalizing species 
@@ -184,8 +198,10 @@ struct SpeciesParams
     int charge_sign;
     double normden;
     double vs;
-    string loadtype;
+    string loadtype_pos;
+    string loadtype_vel;
 };
+
 
 
 /**

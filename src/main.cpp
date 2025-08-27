@@ -15,6 +15,7 @@
 #include <string>
 #include "collision.h"
 #include <tuple>
+#include "emitter.h"
 
 using namespace std; 
 using namespace display;
@@ -54,8 +55,6 @@ int main( int argc , char *argv[])
     
     auto iniData = INIParser::parse(filename);
 
-    //auto species_section = iniData["species"];
-    //int species_no = species_section.size();
 
     //output folder
     std::string outputfolder = INIParser::getString(iniData["file"],"output");
@@ -88,15 +87,21 @@ int main( int argc , char *argv[])
     double den = INIParser::getDouble(iniData["simulation"],"density");
     double tempwall = INIParser::getInt(iniData["simulation"],"tempwall");
     int ionfixed = INIParser::getInt(iniData["simulation"],"ionfixed");
+    double voltage_left = INIParser::getDouble(iniData["simulation"],"voltage_left");
+    double voltage_right = INIParser::getDouble(iniData["simulation"],"voltage_right");
+
 
 
     //collision
     std::string elastic_flag = INIParser::getString(iniData["collision"],"elastic");
     std::string excitation_flag = INIParser::getString(iniData["collision"],"excitation");
     std::string ionization_flag = INIParser::getString(iniData["collision"],"ionization");
+    std:: string pion_elastic_flag = INIParser::getString(iniData["collision"],"pion_elastic");
+    std:: string e_detach_collision_flag = INIParser::getString(iniData["collision"],"e_detach_collision");
     double GAS_DENSITY = INIParser::getDouble(iniData["collision"],"GAS_DENSITY");
     std::string collgroup = INIParser::getString(iniData["collision"],"collgroup");
     auto collisionPairs = INIParser::parseCollGroup(collgroup);
+    std::string GAS_TYPE = INIParser::getString(iniData["collision"],"GAS_TYPE");
 
     
     //normalization
@@ -109,6 +114,12 @@ int main( int argc , char *argv[])
     double tolerance = INIParser::getDouble(iniData["solver"],"tolerance");
     double max_iteration = INIParser::getInt(iniData["solver"],"max_iteration");
     std::string SolverType = INIParser::getString(iniData["solver"],"solvertype");
+
+
+    //external field
+    double B = INIParser::getDouble(iniData["ExternalField"],"B");
+    double theta = (M_PI / 180.0) * INIParser::getDouble(iniData["ExternalField"],"theta");
+    double azimuth = (M_PI / 180.0) * INIParser::getDouble(iniData["ExternalField"],"azimuth");
     
     //visual plot flag(using matplotlibcpp.h) 
     int Energyplot_flag = INIParser::getInt(iniData["visualplot"],"Energy_plot");
@@ -120,9 +131,10 @@ int main( int argc , char *argv[])
     int phaseplot_flag = INIParser::getInt(iniData["visualplot"],"phase_plot");
     int species_index = INIParser::getInt(iniData["visualplot"],"species_index");
     int dft_flag = INIParser::getInt(iniData["visualplot"],"dft_rho");
+    int ke_components = INIParser::getInt(iniData["visualplot"],"ke_components");
+    int coll_freq_plot = INIParser::getInt(iniData["visualplot"],"coll_freq_plot");
 
-
-
+    
     //parse species data
     const auto& SpeciesSection = iniData.at("Species");
 
@@ -139,6 +151,7 @@ int main( int argc , char *argv[])
     std::vector<double> normden;
     std::vector<double> vs;
     std::vector<std::string> pos_init;
+    std::vector<std::string> vel_init;
 
     names.reserve(species_no);
     mass.reserve(species_no);
@@ -149,6 +162,7 @@ int main( int argc , char *argv[])
     normden.reserve(species_no);
     vs.reserve(species_no);
     pos_init.reserve(species_no);
+    vel_init.reserve(species_no);
 
     std::vector<SpeciesParams> param_list;
     param_list.reserve(species_no);
@@ -165,7 +179,8 @@ int main( int argc , char *argv[])
         params.charge_sign = INIParser::getInt(SpeciesSection, prefix + "charge_sign");
         params.normden = INIParser::getDouble(SpeciesSection, prefix + "normden");
         params.vs = INIParser::getDouble(SpeciesSection, prefix + "vs");
-        params.loadtype = INIParser::getString(SpeciesSection, prefix + "loadtype");
+        params.loadtype_pos = INIParser::getString(SpeciesSection, prefix + "loadtype_pos");
+        params.loadtype_vel = INIParser::getString(SpeciesSection, prefix + "loadtype_vel");
         param_list.push_back(params);
     }
 
@@ -178,7 +193,8 @@ int main( int argc , char *argv[])
         charge_signs.push_back(p.charge_sign);    // Charge sign (integer -1 or 1)
         frac_densities.push_back(p.normden);  // Fractional density
         vs.push_back(p.vs);  // Fractional density
-        pos_init.push_back(p.loadtype);
+        pos_init.push_back(p.loadtype_pos);
+        vel_init.push_back(p.loadtype_vel);
    }
 
     double k = 0;
@@ -189,8 +205,8 @@ int main( int argc , char *argv[])
 
     //display::print(k);
 
-    normden[1] = den; //ion density
-    normden[0] = den/k; //electron density
+    normden[1] = den;
+    normden[0] = den/k;
     
     for(int i = 2 ;i < species_no; i++)
     {
@@ -280,18 +296,32 @@ int main( int argc , char *argv[])
     domain.set_userdefined_normscheme(time_scale,lenght_scale,energy_scale);
     domain.set_time(DT,NUM_TS,write_interval);
     domain.set_normscheme();
-    domain.vL =  0;
-    domain.vR = 0;
+    domain.vL = voltage_left;
+    domain.vR = voltage_right;
     domain.I_leftwall = 0;
     domain.I_rightwall = 0;
+    domain.phi_norm = Const::QE/(Const::K_b*Const::EV_to_K*temps[0]); // Normalization factor for potential
     //collision
     domain.GAS_DENSITY = GAS_DENSITY;
     domain.enable_elastic_collision = string_to_bool(elastic_flag);    // Flag for elastic collisions
     domain.enable_excitation_collision = string_to_bool(excitation_flag); // Flag for excitation collisions
     domain.enable_ionization_collision = string_to_bool(ionization_flag); // Flag for ionization collisions
+    domain.enable_pion_elastic = string_to_bool(pion_elastic_flag);
+    domain.enable_e_detach_collision = string_to_bool(e_detach_collision_flag);
+    domain.GAS_TYPE = GAS_TYPE;
     domain.delta_g = 0;
+    domain.N_ecoll = 0;
+    domain.N_ioncoll = 0;
+    domain.N_negioncoll = 0;
 
+    domain.electronegativity = 0;
+    
     domain.ionfixed = ionfixed;
+
+
+    domain.B = B;
+    domain.theta = theta;
+    domain.azimuth = azimuth;
     
     std::vector<Species> species_list;
  
@@ -302,19 +332,48 @@ int main( int argc , char *argv[])
         computed_spwt = normden[i] * domain.xL * domain.L / nParticles[i];
         //print(domain.L);
 
-        species_list.emplace_back(names[i], mass[i], charge_signs[i]*Const::QE, computed_spwt, temps[i], nParticles[i],vs[i],frac_densities[i], pos_init[i], domain);
+        species_list.emplace_back(names[i], mass[i], charge_signs[i]*Const::QE, computed_spwt, temps[i], nParticles[i],vs[i],frac_densities[i], pos_init[i], vel_init[i], domain);
     }
- 
+
+    ///
+    //double beam_temp = 0.5 * species_list[2].mass * pow(species_list[2].vs * domain.vel_norm, 2) / Const::QE;
+
+    //domain.tau = (sqrt(normden[0]*species_list[2].mass))/(sqrt(normden[2]*species_list[0].mass)) * (species_list[2].temp/beam_temp);
+    ///
     
-    CollisionHandler ElectronNeutralCollision(domain);
+    CollisionHandler *ElectronNeutralCollision = nullptr;
+
+    if(domain.GAS_TYPE == "H")
+    {
+        if(domain.enable_pion_elastic)
+        {
+            ElectronNeutralCollision = new CollisionHandler(domain, HYDROGEN);
+        }
+        else
+        {
+            ElectronNeutralCollision = new CollisionHandler(domain, HYDROGEN, "../cross_section");
+        }
+        
+    }
+    else if(domain.GAS_TYPE == "AR")
+    {
+        ElectronNeutralCollision = new CollisionHandler(domain, ARGON, "../cross_section");
+    }
+
+    
     //collision
     //pre-calculate electron cross-section for energy level(DE_CS*1,DE_CS*2,DE_CS*3........DE_CS*(CS_RANGES-1))
-    ElectronNeutralCollision.set_electron_cross_sections();
+    ElectronNeutralCollision->set_electron_cross_sections();
+    ElectronNeutralCollision->set_pion_cross_sections();
     //Calculate total cross-section for energy levels(DE_CS*1,DE_CS*2,DE_CS*3........DE_CS*(CS_RANGES-1))
-    ElectronNeutralCollision.calc_total_cross_sections();
+    ElectronNeutralCollision->calc_total_cross_sections();
     
-    domain.max_electron_coll_freq = ElectronNeutralCollision.max_electron_coll_freq();
+    domain.max_electron_coll_freq = ElectronNeutralCollision->max_electron_coll_freq();
+
+    
+
     domain.display(species_list);
+
     print("Press Enter to continue...");
     std::cin.get();
 
@@ -330,9 +389,35 @@ int main( int argc , char *argv[])
     output.phase_plot = phaseplot_flag;
     output.dft_flag = dft_flag;
     output.species_index = species_index;
+    output.ke_components = ke_components;
+    output.coll_freq_plot = coll_freq_plot;
     output.write_metadata(ni,NUM_TS,write_interval,write_interval_phase,DT_coeff,den,save_fig,domain.normscheme,
         domain.sub_cycle_interval,LDe,LDi,wpe,wpi,species_no,GAS_DENSITY, domain.max_electron_coll_freq);
     output.write_species_metadata(species_list);
+
+
+    //-----emitter--
+    std::vector<Emitter> emitters;
+    const auto& emitterSection = iniData.at("Emitters");
+
+    // Get the number of emitters
+    int emitter_count = INIParser::getInt(emitterSection, "count");
+    emitters.reserve(emitter_count);
+
+    for (int i = 0; i < emitter_count; i++)
+    {
+        std::string prefix = "emitter_" + std::to_string(i) + ".";
+
+        EmitterParams params;
+        params.emitter_loc = INIParser::getDouble(emitterSection, prefix + "emitter_loc");
+        params.temp = INIParser::getDouble(emitterSection, prefix + "temp");
+        params.numparticle = INIParser::getInt(emitterSection, prefix + "numparticle");
+        params.vdrift = INIParser::getDouble(emitterSection, prefix + "drift_velocity");
+        params.species_id1 = INIParser::getInt(emitterSection, prefix + "species_id1");
+        params.species_id2 = INIParser::getInt(emitterSection, prefix + "species_id2");
+        emitters.emplace_back(params,domain);
+    }
+    ///---emitter----
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -364,15 +449,29 @@ int main( int argc , char *argv[])
         sp.Rewind_species();
     }
 
+    //double nu = ElectronNeutralCollision->average_collision_frequency(species_list[0]);
+    //display::print("avaerage collision frequecny : ", nu);
 
     //--------------MAIN LOOP----------------------- 
     for(int ts = 0 ; ts < NUM_TS + 1; ts++)
     {
         
-        //domain.vL =  5*(Const::eV/(Const::K_b*Const::EV_to_K));
-        if(ts%5 == 0)
+        
+        domain.electronegativity = domain.Calculate_alpha(species_list[0], species_list[2]);
+        domain.avg_coll_freq = ElectronNeutralCollision->average_collision_frequency(species_list[1]);
+
+        
+
+        //domain.collision_rate.display();
+        
+        int start = 0;
+        int end = NUM_TS;
+        if (ts >= start && ts < end)
         {
-            //GenerateParticlePairs(species_list[0],species_list[1],1,domain);
+            for (auto &emit : emitters)
+            {
+                emit.inject(species_list);
+            }
         }
         
         for (Species &sp:species_list)
@@ -385,6 +484,8 @@ int main( int argc , char *argv[])
         domain.ComputeRho(species_list);
         
         fieldsolver.PotentialSolver(ts);
+
+
         fieldsolver.CalculateEfield();
 
         //---------particle-mover-------------------------------------------- 
@@ -412,13 +513,18 @@ int main( int argc , char *argv[])
             }
         }
 
-        if(domain.enable_elastic_collision || domain.enable_excitation_collision || domain.enable_ionization_collision)
+        if(domain.enable_elastic_collision || domain.enable_excitation_collision || domain.enable_ionization_collision || domain.enable_pion_elastic || domain.enable_e_detach_collision)
         {
             for (const auto& [first, second] : collisionPairs)
             {
-                ElectronNeutralCollision.handle_collisions(species_list[first], species_list[second]);  
+                ElectronNeutralCollision->handle_collisions(species_list[first], species_list[second],species_list[0]);
+                ElectronNeutralCollision->coll_rate(species_list[first], species_list[second]);  
             }
+            
         }
+
+        //------------------------------------------------------------------------
+        
         
         if(ts%write_interval== 0)
         {
@@ -430,9 +536,13 @@ int main( int argc , char *argv[])
                 for(Species &sp:species_list)
                 {
                     output.write_den_data(ts,sp);
+                    output.write_collrate_data(ts,sp);
                     output.write_vel_data(ts,sp);
+
                 }    
             }
+            output.write_avg_collision_freq(ts);
+            output.write_alpha_vs_time(ts);
         }
         
         if(ts%write_interval_phase == 0)
@@ -450,6 +560,7 @@ int main( int argc , char *argv[])
         {
             output.diagnostics(ts,species_list);
         }
+ 
     }
     
     output.write_ke();
@@ -475,9 +586,22 @@ int main( int argc , char *argv[])
         std::cout << "Elapsed time: " << elapsed_time.count() << "seconds." <<"or "<< elapsed_time.count()/60<<"minutes"<<std::endl;
     }
     
+    //print(domain.N_pcoll);
+    //print("total sim time:",NUM_TS*(DT_coeff/wpe));
+    double z1 = (domain.N_ecoll/(nParticles[0]*NUM_TS*(DT_coeff/domain.W)))/domain.W;
+    double z2 = (domain.N_ioncoll/(nParticles[1]*NUM_TS*(DT_coeff/domain.W)))/domain.W;
+    double z3 = (domain.N_negioncoll/((nParticles[2] + nParticles[3])*NUM_TS*(DT_coeff/domain.W)))/domain.W;
+
+    display::print("Average electron collision frequency: ", z1);
+    display::print("Average ion collision frequency: ", z2);
+    display::print("Average negative ion collision frequency: ", z3);
+
+    output.write_extra(z1,z2,z3);
 
     print("Press Enter to close the simulation...");
     std::cin.get();
+
+    delete ElectronNeutralCollision;
 
     return 0;
 }

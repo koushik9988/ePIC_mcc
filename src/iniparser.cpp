@@ -97,20 +97,111 @@ std::vector<std::string> INIParser::split(const std::string &str, char delimiter
     return tokens;
 }
 
-std::pair<std::string, int> INIParser::loadtypeextract(const std::string &position_init)
+/*
+std::tuple<std::string, int, double> INIParser::loadtypeextract(const std::string &position_init)
 {
-    stringstream ss(position_init);
-    string func_type, n_str;
+    size_t open = position_init.find('(');
+    size_t close = position_init.find(')', open);
 
-    if (getline(ss, func_type, '(') && getline(ss, n_str, ')'))
+    if (open != std::string::npos && close != std::string::npos && close > open)
     {
-        int n = stoi(n_str);
-        return {func_type, n};
-    } 
-    
-    // Default case for "random" or "uniform" 
-    return {position_init, 0}; 
+        std::string prefix = position_init.substr(0, open);    // e.g., "1.2sin"
+        std::string n_str = position_init.substr(open + 1, close - open - 1);  // e.g., "3"
+
+        std::string func_type;
+        double amplitude = 1.0;
+
+        if (prefix.size() >= 3)
+        {
+            std::string last3 = prefix.substr(prefix.size() - 3);
+            if (last3 == "sin" || last3 == "cos")
+            {
+                func_type = last3;  // "sin" or "cos"
+                std::string amp_str = prefix.substr(0, prefix.size() - 3);  // e.g., "1.2"
+
+                if (!amp_str.empty())
+                {
+                    amplitude = std::stod(amp_str);
+                }
+            }
+            else
+            {
+                func_type = prefix;
+            }
+        }
+        else
+        {
+            func_type = prefix;
+        }
+
+        int n = std::stoi(n_str);
+
+        return {func_type, n, amplitude};
+    }
+
+    return {position_init, 0, 1.0};
 }
+
+*/
+
+
+
+///////////////
+std::tuple<std::string, int, double> INIParser::loadtypeextract(const std::string &position_init)
+{
+    size_t open = position_init.find('(');
+    size_t close = position_init.find(')', open);
+
+    if (open != std::string::npos && close != std::string::npos && close > open)
+    {
+        std::string prefix = position_init.substr(0, open);
+        std::string arg_str = position_init.substr(open + 1, close - open - 1);
+
+        if (prefix == "extend")
+        {
+            // Format: extend(start,end) --> we'll store start in `n`, end in `amplitude`
+            size_t comma = arg_str.find(',');
+            if (comma != std::string::npos)
+            {
+                int start = std::stoi(arg_str.substr(0, comma));
+                double end = std::stod(arg_str.substr(comma + 1));
+                return {"extend", start, end};  // using int for start, double for end
+            }
+        }
+
+        // Normal sin, cos, etc.
+        std::string func_type;
+        double amplitude = 1.0;
+
+        if (prefix.size() >= 3)
+        {
+            std::string last3 = prefix.substr(prefix.size() - 3);
+            if (last3 == "sin" || last3 == "cos")
+            {
+                func_type = last3;
+                std::string amp_str = prefix.substr(0, prefix.size() - 3);
+
+                if (!amp_str.empty())
+                    amplitude = std::stod(amp_str);
+            }
+            else
+            {
+                func_type = prefix;
+            }
+        }
+        else
+        {
+            func_type = prefix;
+        }
+
+        int n = std::stoi(arg_str);
+        return {func_type, n, amplitude};
+    }
+
+    return {position_init, 0, 1.0};
+}
+
+////////////////
 
 std::vector<std::pair<int, int>> INIParser::parseCollGroup(const std::string &collGroupStr)
 {

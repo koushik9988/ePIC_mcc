@@ -13,6 +13,7 @@ void SpectralSolver(vec<double> &rho_in, vec<double> &phi_out, int n, double L)
 {
     int nr = (n/2) + 1;
     double norm = 1.0 /n;
+    double dx = L/(n-1);
  
     double *rho = fftw_alloc_real(n);
     double *phi = fftw_alloc_real(n);
@@ -34,7 +35,7 @@ void SpectralSolver(vec<double> &rho_in, vec<double> &phi_out, int n, double L)
     for (int k = 0; k <= n/2; ++k)
     {
         double kx = 2.0 * M_PI * k / L;
-        double denom = (k == 0) ? 1.0 : -(kx * kx); // Avoid divide-by-zero at k=0
+        double denom = (k == 0) ? 1.0 : - (4/(dx*dx))*sin(kx*dx*0.5)*sin(kx*dx*0.5);//-(kx * kx); // Avoid divide-by-zero at k=0
 
         phi_k[k][0] = (k == 0) ? 0.0 : rho_k[k][0] / denom;
         phi_k[k][1] = (k == 0) ? 0.0 : rho_k[k][1] / denom;
@@ -68,7 +69,7 @@ int main()
 {
     int n = 1024;
     double L = 100.0;
-    double dx = L / n;
+    double dx = L / (n-1);
 
     vec<double> x(n), rho(n), phi(n), phi_exact(n);
 

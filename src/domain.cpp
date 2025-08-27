@@ -11,6 +11,8 @@ Domain::Domain(double x0, double dx, int ni):x0(x0), dx(dx), ni(ni)
     rho = vec<double>(ni);
     ef  = vec<double>(ni);
 
+    collision_rate = vec<double>(ni);
+
     dft_k = vec<double>((ni/2) +1);
     dft_value = vec<double>((ni/2) +1);
     xL = (ni-1)*dx;
@@ -26,7 +28,7 @@ void Domain::display(vector<Species> &species)
     display::print(" Simulation Parameters");
     display::print("--------------------------------------------");
     display::print("  Cell Spacing:               ", dx);
-    display::print("  System Length:              ", xL);
+    display::print("  System Length(m):              ", xL*L);
     display::print("  Grid Points:                ", ni);
     display::print("  Normalized Time Step:       ", DT);
     display::print("  Total Time Steps:           ", NUM_TS);
@@ -82,11 +84,18 @@ void Domain::display(vector<Species> &species)
     display::print("\n Collision Properties");
     display::print("--------------------------------------------");
     display::print("  Neutral Gas Density: ", GAS_DENSITY);
-    display::print("  Elastic Collision:   ", enable_elastic_collision ? "✅ Enabled" : "❌ Disabled");
-    display::print("  Excitation Collision:", enable_excitation_collision ? "✅ Enabled" : "❌ Disabled");
-    display::print("  Ionization Collision:", enable_ionization_collision ? "✅ Enabled" : "❌ Disabled");
+    display::print("  Elastic Collision:   ", enable_elastic_collision ? "Enabled" : " Disabled");
+    display::print("  Excitation Collision:", enable_excitation_collision ? "Enabled" : " Disabled");
+    display::print("  Ionization Collision:", enable_ionization_collision ? "Enabled" : " Disabled");
     display::print("  maximum electron collision frequency:", max_electron_coll_freq);
     display::print("  \u03BD * DT :",max_electron_coll_freq*(DT/wpe));
+
+
+    display::print("\n Magnetic Field");
+    display::print("--------------------------------------------");
+    display::print("  Bx  : ",  B * sin(theta) * cos(azimuth));
+    display::print("  By  : ", B * sin(theta) * sin(azimuth));
+    display::print("  Bz  : ", B * cos(theta));
     
     display::print("\n Execution Mode");
     display::print("--------------------------------------------");
@@ -98,124 +107,23 @@ void Domain::display(vector<Species> &species)
         cout << "\n Species (" << index << ") Information ";
         cout << "\n--------------------------------------------";
         cout << "\n  Name:                   " << p.name;
-        cout << "\n  Mass:                   " << p.mass;
+        cout << "\n  Mass:                   " << p.defaultmass;
         cout << "\n  Charge:                 " << p.charge;
         cout << "\n  Temperature:            " << p.temp;
-        cout << "\n  Superparticle Weight:   " << p.spwt;
+        cout << "\n  Superparticle Weight:   " << p.defaultspwt;
         cout << "\n  Particle Count:         " << p.numparticle;
         cout << "\n  Streaming Velocity:     " << p.vs;
         cout << "\n  Normalized Density:     " << p.fract_den;
-        cout << "\n  Initialization Type:    " << p.initialization;
+        cout << "\n  Posistion Initialization Type:    " << p.initialization_pos;
+        cout << "\n  Velocity Initialization Type:    " << p.initialization_vel;
         cout << "\n--------------------------------------------\n";
         index++;
     }
+
+    display::print("test hot cold beam",tau);
     display::print("\n Simulation Ready to Start!\n");
 } 
-/*
 
-void Domain::display(std::vector<Species> &species)
-{
-    
-    std::locale::global(std::locale("C.UTF-8"));
-    
-    std::ofstream report("report.txt");
-    if (!report) {
-        std::cerr << "Error: Unable to open report.txt for writing!" << std::endl;
-        return;
-    }
-
-    auto print = [&](const auto&... args) {
-        (std::cout << ... << args) << "\n";
-        (report << ... << args) << "\n";
-    };
-
-    print("*********************************************************************************************");
-    print("         1D Electrostatic Particle-In-Cell Code (ePIC++) with MCC Collision Model ");
-    print("*********************************************************************************************\n");
-    
-    print("Simulation Parameters");
-    print("--------------------------------------------");
-    print("  Cell Spacing:               ", dx);
-    print("  System Length:              ", xL);
-    print("  Grid Points:                ", ni);
-    print("  Normalized Time Step:       ", DT);
-    print("  Total Time Steps:           ", NUM_TS);
-    print("  Plasma Density:             ", density);
-    
-    print("\nPlasma Characteristics");
-    print("--------------------------------------------");
-    print("  Electron Debye Length:      ", LDe);
-    print("  Ion Debye Length:           ", LDi);
-    print("  Electron Plasma Frequency:  ", wpe);
-    print("  Ion Plasma Frequency:       ", wpi);
-    print("  Electron Thermal Velocity:  ", LDe * wpe, " m/s");
-    print("  Ion Thermal Velocity:       ", LDi * wpi, " m/s");
-    print("  Ion Acoustic Velocity:      ", IAW_vel, " m/s");
-    
-    print("\nNormalization");
-    print("--------------------------------------------");
-    print("  Normalization Scheme:       ", normscheme == 1 ? "Electron-scale" :
-                                        normscheme == 2 ? "Ion-scale" :
-                                        normscheme == 3 ? "Sub-cycling" :
-                                        normscheme == 4 ? "Time in electron, space in ion scale" : "Custom");
-    print("  Velocity Normalization:     ", vel_normscheme == 1 ? "Electron thermal velocity" :
-                                        vel_normscheme == 2 ? "Ion thermal velocity" : "Ion acoustic velocity");
-    print("  Velocity Normalization Factor:  ", vel_norm);
-    print("  Simulation Time Period:         ", (2 * Const::PI) / W);
-    print("  Actual Time Step:               ", DT / W);
-    print("  Total Simulation Time:          ", (DT / W) * NUM_TS, " seconds");
-    print("  Ion/Electron Thermal Velocity Ratio: ", vel_ratio);
-    print("  Electron/Ion Thermal Velocity Ratio: ", 1 / vel_ratio);
-    
-    print("\nSolver and Boundary Conditions");
-    print("--------------------------------------------");
-    print("  Boundary Condition:  ", bc);
-    print("  Potential Solver:    ", SolverType);
-    print("  Solver Tolerance:    ", tolerance);
-    print("  Max Iterations:      ", max_iteration);
-    print("  Shape Function:      ", shape);
-    
-    print("\nDiagnostics");
-    print("--------------------------------------------");
-    print("  Diagnostics Type:         ", diagtype);
-    print("  Write Interval:           ", write_interval);
-    print("  Sub-cycle Interval:       ", sub_cycle_interval);
-    
-    print("\nCollision Properties");
-    print("--------------------------------------------");
-    print("  Neutral Gas Density: ", GAS_DENSITY);
-    print("  Elastic Collision:   ", enable_elastic_collision ? "Enabled" : "Disabled");
-    print("  Excitation Collision:", enable_excitation_collision ? "Enabled" : "Disabled");
-    print("  Ionization Collision:", enable_ionization_collision ? "Enabled" : "Disabled");
-    print("  Max Electron Collision Frequency:", max_electron_coll_freq);
-    print("  \u03BD * DT :",max_electron_coll_freq*(DT/wpe));
-    
-    print("\nExecution Mode");
-    print("--------------------------------------------");
-    print("  Mode: ", num_threads == 1 ? "Serial" : "Parallel (" + std::to_string(num_threads) + " threads)");
-    
-    int index = 1;
-    for (const Species &p : species)
-    {
-        print("\nSpecies (", index, ") Information");
-        print("--------------------------------------------");
-        print("  Name:                   ", p.name);
-        print("  Mass:                   ", p.mass);
-        print("  Charge:                 ", p.charge);
-        print("  Temperature:            ", p.temp);
-        print("  Superparticle Weight:   ", p.spwt);
-        print("  Particle Count:         ", p.numparticle);
-        print("  Streaming Velocity:     ", p.vs);
-        print("  Normalized Density:     ", p.fract_den);
-        print("  Initialization Type:    ", p.initialization);
-        print("--------------------------------------------");
-        index++;
-    }
-
-    report.close();
-}
-
-*/
 //set normalized parameter.
 void Domain:: set_normparam(double LDe, double wpe, double LDi, double wpi)
 {
@@ -429,7 +337,7 @@ double Domain::ComputePE(Species &species)
     }
     else
     {
-        Th = (species.temp*Const::eV)*(species.spwt)*species.numparticle;
+        Th = (species.temp*Const::eV)*(species.defaultspwt)*species.numparticle;
     }
 
     // Calculate total thermal energy (Th) of electrons in the species
@@ -452,6 +360,25 @@ void Domain::filter(vec<double> &field)
     }
 }
 
+
+
+double Domain::Calculate_alpha(Species &species1, Species &species2)
+{
+    double n1 = 0.0;
+    double n2 = 0.0;
+    for (auto &p : species1.part_list)
+    {
+        n1 += p.spwt;
+    }
+
+    for (auto &p : species2.part_list)
+    {
+        n2 += p.spwt;
+    }
+
+    return (n2/n1);
+
+}
 
 double Domain::unirand(double lower_bound, double upper_bound) 
 {
