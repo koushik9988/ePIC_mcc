@@ -30,7 +30,7 @@ project_root/
 ├── include/               # Header files
 ├── src/                   # Core source files
 ├── linearalgebra/         # Custom matrix and solver routines
-├── cross_section          # Cross section data for different gases
+├── cross_section/         # Cross section data for different gases
 ├── python_scripts/        # Postprocessing and visualization scripts
 ├── inputfiles/            # Sample INI configuration files
 ├── tests/                 # Unit and performance tests
