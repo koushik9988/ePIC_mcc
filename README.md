@@ -60,6 +60,9 @@ project_root/
     cmake ..
     ```
     ```bash
+   cmake -DENABLE_PLOTTING=ON ..   # build with runtime visualization using matplotcpp
+    ```
+    ```bash
     cmake --build .
     ```
 
