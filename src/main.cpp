@@ -97,6 +97,7 @@ int main( int argc , char *argv[])
     std::string excitation_flag = INIParser::getString(iniData["collision"],"excitation");
     std::string ionization_flag = INIParser::getString(iniData["collision"],"ionization");
     std:: string pion_elastic_flag = INIParser::getString(iniData["collision"],"pion_elastic");
+    std:: string nion_elastic_flag = INIParser::getString(iniData["collision"],"nion_elastic");
     std:: string e_detach_collision_flag = INIParser::getString(iniData["collision"],"e_detach_collision");
     double GAS_DENSITY = INIParser::getDouble(iniData["collision"],"GAS_DENSITY");
     std::string collgroup = INIParser::getString(iniData["collision"],"collgroup");
@@ -307,6 +308,7 @@ int main( int argc , char *argv[])
     domain.enable_excitation_collision = string_to_bool(excitation_flag); // Flag for excitation collisions
     domain.enable_ionization_collision = string_to_bool(ionization_flag); // Flag for ionization collisions
     domain.enable_pion_elastic = string_to_bool(pion_elastic_flag);
+    domain.enable_nion_elastic = string_to_bool(nion_elastic_flag);
     domain.enable_e_detach_collision = string_to_bool(e_detach_collision_flag);
     domain.GAS_TYPE = GAS_TYPE;
     domain.delta_g = 0;
@@ -370,19 +372,19 @@ int main( int argc , char *argv[])
     
     domain.max_electron_coll_freq = ElectronNeutralCollision->max_electron_coll_freq();
 
-    
-
     domain.display(species_list);
 
     print("Press Enter to continue...");
     std::cin.get();
 
-    Output output(outputfolder,domain);
+   // In main.cpp, within the main function, modify the Output initialization
+    Output output(outputfolder, domain);
 
     output.precision = precision;
-    output.Energy_plot =  Energyplot_flag ;
+    #ifdef ENABLE_PLOTTING
+    output.Energy_plot = Energyplot_flag;
     output.Potentialfield_plot = Potentialfieldplot_flag;
-    output.Chargedensity_plot = chargeplot_flag ;
+    output.Chargedensity_plot = chargeplot_flag;
     output.keflag = keflag;
     output.peflag = peflag;
     output.teflag = teflag;
@@ -391,11 +393,25 @@ int main( int argc , char *argv[])
     output.species_index = species_index;
     output.ke_components = ke_components;
     output.coll_freq_plot = coll_freq_plot;
-    output.write_metadata(ni,NUM_TS,write_interval,write_interval_phase,DT_coeff,den,save_fig,domain.normscheme,
-        domain.sub_cycle_interval,LDe,LDi,wpe,wpi,species_no,GAS_DENSITY, domain.max_electron_coll_freq);
+    #else
+    output.Energy_plot = 0;
+    output.Potentialfield_plot = 0;
+    output.Chargedensity_plot = 0;
+    output.keflag = 0;
+    output.peflag = 0;
+    output.teflag = 0;
+    output.phase_plot = 0;
+    output.dft_flag = 0;
+    output.species_index = 0;
+    output.ke_components = 0;
+    output.coll_freq_plot = 0;
+    #endif
+    output.write_metadata(ni, NUM_TS, write_interval, write_interval_phase, DT_coeff, den, save_fig, domain.normscheme,
+    domain.sub_cycle_interval, LDe, LDi, wpe, wpi, species_no, GAS_DENSITY, domain.max_electron_coll_freq);
     output.write_species_metadata(species_list);
-
-
+    
+    //experimental
+    //output.plot_cross_sections(ElectronNeutralCollision);   
     //-----emitter--
     std::vector<Emitter> emitters;
     const auto& emitterSection = iniData.at("Emitters");
@@ -456,11 +472,16 @@ int main( int argc , char *argv[])
     for(int ts = 0 ; ts < NUM_TS + 1; ts++)
     {
         
-        
-        domain.electronegativity = domain.Calculate_alpha(species_list[0], species_list[2]);
-        domain.avg_coll_freq = ElectronNeutralCollision->average_collision_frequency(species_list[1]);
-
-        
+        if(domain.enable_e_detach_collision)
+        {
+            domain.electronegativity = domain.Calculate_alpha(species_list[0], species_list[2]);
+            domain.electronegativity = domain.Calculate_alpha(species_list[0], species_list[domain.species_no-3]);
+        }
+        else
+        {
+            domain.electronegativity = 0;
+        }
+        //domain.avg_coll_freq = ElectronNeutralCollision->average_collision_frequency(species_list[1]);
 
         //domain.collision_rate.display();
         
@@ -513,7 +534,8 @@ int main( int argc , char *argv[])
             }
         }
 
-        if(domain.enable_elastic_collision || domain.enable_excitation_collision || domain.enable_ionization_collision || domain.enable_pion_elastic || domain.enable_e_detach_collision)
+        if(domain.enable_elastic_collision || domain.enable_excitation_collision || domain.enable_ionization_collision || 
+            domain.enable_pion_elastic || domain.enable_e_detach_collision || domain.enable_nion_elastic)
         {
             for (const auto& [first, second] : collisionPairs)
             {

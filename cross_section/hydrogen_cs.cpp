@@ -111,6 +111,12 @@ double compute_mex_cs_pion(double energy, Domain &domain)
 
 }
 
+double compute_mex_cs_nion(double energy, Domain &domain)
+{
+    if (!domain.enable_nion_elastic) return 0.0;
+    return (1e-20 * 6.36 * pow((energy / 13.61), -0.337)) / (1.0 + pow((energy / 5.5), 0.493) + pow((energy / 26.0), 1.429));
+}
+
 double compute_e_detach(double energy, Domain &domain)
 {
     if (!domain.enable_e_detach_collision || energy <= 2.25) return 0.0;

@@ -22,44 +22,36 @@ wpe = metadata_group.attrs['wpe']
 wpi = metadata_group.attrs['wpi']
 mfactor = wpi / wpe
 data = f["time_var/kinetic_energy"]
-data1 = f["time_var/electronegativity"]
 ts = data[:, 0] * mfactor  # Time
-spno = f["/metadata"].attrs["spno"]
 f.close()
 
 def load_pe(path):
     f = h5py.File(pjoin(path, file_name), 'r')
+    gas_density = f['/metadata'].attrs['GAS_DENSITY']
     data = f["time_var/kinetic_energy"]
-    data1 = f["time_var/electronegativity"]
     spno = f["/metadata"].attrs["spno"]
     pe = data[:, 3 * spno + 1]  # Potential energy column
-    #coll_freq = data1[:, 1]
     f.close()
-    return pe
-    #return coll_freq
+    return pe, gas_density
 
-# Load potential energy from all 4 paths
-pe1 = load_pe(path1)
-pe2 = load_pe(path2)
-pe3 = load_pe(path3)
-pe4 = load_pe(path4)
+# Load potential energy + density from all 4 paths
+pe1, gd1 = load_pe(path1)
+pe2, gd2 = load_pe(path2)
+pe3, gd3 = load_pe(path3)
+pe4, gd4 = load_pe(path4)
 
+figsize = np.array([80,80/1.618])
+ppi = np.sqrt(1920**2+1200**2)/24
+fig, ax = plt.subplots(figsize=figsize/10.4, constrained_layout=True, dpi=ppi)
 
+ax.plot(ts, pe1, label=fr"Neutral density = {gd1:.2e}", color='purple')
+ax.plot(ts, pe2, label=fr"Neutral density = {gd2:.2e}", color='blue')
+ax.plot(ts, pe3, label=fr"Neutral density = {gd3:.2e}", color='green')
+ax.plot(ts, pe4, label=fr"Neutral density = {gd4:.2e}", color='red')
 
-# Plot together
-fig, ax = plt.subplots(figsize=(7, 5))
-
-ax.plot(ts, pe1, label="Neutral density = 1e18", color='purple')
-ax.plot(ts, pe2, label="Neutral density = 5e18", color='blue')
-ax.plot(ts, pe3, label="Neutral density = 1e19", color='green')
-ax.plot(ts, pe4, label="Neutral density = 5e19", color='red')
-
-#ax.set_yscale("log")
-#ax.set_ylim([1e-4, 2e0])
 ax.set_xlabel(r"$\omega_{pi} t$")
 ax.set_ylabel("Potential Energy")
-#ax.set_ylabel(r"$\alpha$")
-#ax.set_title("electronegativity over time")
+ax.semilogy()
 ax.grid(True, which='both', linestyle='--', alpha=0.5)
 ax.legend()
 plt.tight_layout()

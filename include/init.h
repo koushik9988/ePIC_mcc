@@ -18,16 +18,13 @@ class Species;
 
 class Init 
 {
-public:
+    public:
     //in the constructor we pass Species and Domain class instances to access the species and domain class
     //memebr variable and methods 
-    Init(Species &species, Domain &domain);
-
-    
-   
+    Init(Species &species, Domain &domain);   
     static double SampleVel(Species &species, double temp);
 
-private:
+    private:
     Species &species;
     Domain &domain;
     double SampleVel(Species &species);

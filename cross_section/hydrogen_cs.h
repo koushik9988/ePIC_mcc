@@ -20,6 +20,7 @@ double compute_ionization_CS_h(double energy, Domain &domain);
 
 //H^+ + H2 -> elastic cross section
 double compute_mex_cs_pion(double energy, Domain &domain);
+double compute_mex_cs_nion(double energy, Domain &domain);
 double compute_e_detach(double energy, Domain &domain);
 
 #endif  // _HYDROGEN_CROSS_SECTIONS_H_

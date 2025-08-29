@@ -14,6 +14,7 @@ CollisionHandler::CollisionHandler(Domain &domain, int gas, const char* data_pat
     sigma_exc.resize(CS_RANGES, 0.0);
     sigma_ionz.resize(CS_RANGES, 0.0);
     sigma_mex_pion.resize(CS_RANGES, 0.0);
+    sigma_mex_nion.resize(CS_RANGES,0.0);
     sigma_e_detach.resize(CS_RANGES,0.0); 
 
     if (gas == HYDROGEN)
@@ -33,6 +34,7 @@ CollisionHandler::CollisionHandler(Domain &domain, int gas) : domain(domain), ga
     sigma_exc.resize(CS_RANGES, 0.0);
     sigma_ionz.resize(CS_RANGES, 0.0);
     sigma_mex_pion.resize(CS_RANGES, 0.0);
+    sigma_mex_nion.resize(CS_RANGES,0.0);
     sigma_e_detach.resize(CS_RANGES,0.0); 
 }
 
@@ -63,7 +65,7 @@ void CollisionHandler::set_electron_cross_sections()
     }
 }
 
-void CollisionHandler::set_pion_cross_sections()
+void CollisionHandler::set_pion_cross_sections() // changes function name later to ion instead of pion
 {
 
     std::vector<double> energy(CS_RANGES);
@@ -73,7 +75,9 @@ void CollisionHandler::set_pion_cross_sections()
     if (gas == HYDROGEN)
     {
         std::transform(energy.begin(), energy.end(), sigma_mex_pion.begin(),[this](double energy_val) { return compute_mex_cs_pion(energy_val, domain); });
+        std::transform(energy.begin(), energy.end(), sigma_mex_nion.begin(),[this](double energy_val) { return compute_mex_cs_nion(energy_val, domain); });
         std::transform(energy.begin(), energy.end(), sigma_e_detach.begin(),[this](double energy_val) { return compute_e_detach(energy_val, domain); });
+        
     }
     else
     {
@@ -89,7 +93,7 @@ void CollisionHandler::calc_total_cross_sections()
     {
         sigma_tot_e[i] = (sigma_ela[i] + sigma_exc[i] + sigma_ionz[i]) * domain.GAS_DENSITY;
         sigma_tot_pion[i] = (sigma_mex_pion[i]) * domain.GAS_DENSITY;
-        sigma_tot_nion[i] = sigma_e_detach[i] * domain.GAS_DENSITY;
+        sigma_tot_nion[i] = (sigma_e_detach[i] + sigma_mex_nion[i]) * domain.GAS_DENSITY;
     }
 }
 
@@ -261,7 +265,7 @@ void CollisionHandler::collision_electron(double xe, double &vxe, double &vye, d
 }
 
 
-void CollisionHandler::collision_ion(double xe, double &vx_1, double &vy_1, double &vz_1, double &vx_2, double &vy_2, double &vz_2,
+void CollisionHandler::collision_pion(double xe, double &vx_1, double &vy_1, double &vz_1, double &vx_2, double &vy_2, double &vz_2,
      int eindex, Species &species1, Species &species2)
 {
     double   g,gx,gy,gz,wx,wy,wz;
@@ -338,127 +342,87 @@ void CollisionHandler::collision_ion(double xe, double &vx_1, double &vy_1, doub
 }
 
 
-void CollisionHandler::collision_detachment(double xe, double &vx_1, double &vy_1, double &vz_1, double &vx_2, double &vy_2, double &vz_2, 
+
+void CollisionHandler::collision_nion(double xe, double &vx_1, double &vy_1, double &vz_1,double &vx_2, double &vy_2, double &vz_2, 
     int eindex, Species &species1, Species &species2, Species &electron_species)
 {
-    // Relative velocity (g) and center-of-mass velocity (w)
     double gx = vx_1 - vx_2;
     double gy = vy_1 - vy_2;
     double gz = vz_1 - vz_2;
-    double g_mag = sqrt(gx * gx + gy * gy + gz * gz);
+    double g  = sqrt(gx * gx + gy * gy + gz * gz);
 
     double m1 = species1.defaultmass;
     double m2 = species2.defaultmass;
     double m_total = m1 + m2;
-    
+
     double wx = (vx_1 * m1 + vx_2 * m2) / m_total;
     double wy = (vy_1 * m1 + vy_2 * m2) / m_total;
     double wz = (vz_1 * m1 + vz_2 * m2) / m_total;
 
-    double E_th_det = 2.25 * Const::eV; // Detachment threshold energy in Joules
-    
-    double E_kin_com = 0.5 * ((m1*m2)/m_total) * (g_mag * g_mag * domain.vel_norm * domain.vel_norm); //reduced mass in COM frame
+    // Cross sections for momentum exchange + detachment
+    double t0 = sigma_mex_nion[eindex];
+    double t1 = t0 + sigma_e_detach[eindex];
+    double r  = rnd();
 
-    if (E_kin_com < E_th_det) return; // Not enough energy, no collision
-
-    double E_available = E_kin_com - E_th_det;
-
-    // Simple model for energy sharing
-    double E_electron_ej = 0;//E_available * (1.0 - sqrt(rnd()));
-
-    double v_e_com = sqrt(2.0 * E_electron_ej / Const::ME);
-
-    // Isotropic scattering: generate random angles for the new particles.
-    double chi = acos(1.0 - 2.0 * rnd()); 
-    double eta = 2.0 * Const::PI * rnd();
-
-    double sc = sin(chi);
-    double cc = cos(chi);
-    double se = sin(eta);
-    double ce = cos(eta);
- 
-    // Velocity components for the new electron in COM frame
-    double ve_com_x = v_e_com * sc * ce;
-    double ve_com_y = v_e_com * sc * se;
-    double ve_com_z = v_e_com * cc;
-
-    electron_species.AddParticle(Particle(xe, (wx + ve_com_x / domain.vel_norm),(wy + ve_com_y / domain.vel_norm),(wz + ve_com_z / domain.vel_norm),1,NAN,species1.defaultspwt));
-    //display::print("executed detachment collision");
-    
-}
-
-
-//  (spwt?????)
-/*
-void CollisionHandler::handle_collisions(Species &projectile, Species &target_gas, Species &electron_species)
-{
-    for (Particle &part : projectile.part_list)
+    if (r < (t0 / t1))  
     {
-        double v_sqr = (part.vx * part.vx + part.vy * part.vy + part.vz * part.vz) * domain.vel_norm * domain.vel_norm;
-        double velocity = sqrt(v_sqr);
-        double energy = (0.5 * projectile.defaultmass * v_sqr) / Const::eV;
-        int energy_index = std::min(static_cast<int>(energy / DE_CS + 0.5), static_cast<int>(CS_RANGES) - 1);
+        // Momentum exchange (same as collision_ion)
+        //display::print("nion elastic!");
+        double theta, phi, chi, eta;
+        if (gx == 0) theta = 0.5 * Const::PI;
+        else theta = atan2(sqrt(gy * gy + gz * gz), gx);
 
-        double sigma_tot = 0.0;
-
-        if (projectile.name == "electron")
-        {
-            sigma_tot = sigma_tot_e[energy_index];
-        }
-        else if (projectile.name == "ion")
-        {
-            sigma_tot = sigma_tot_pion[energy_index];
-        }
-        else if (projectile.name == "beam" )//&& projectile.charge == -1)
-        {
-            sigma_tot = sigma_tot_pion[energy_index];//sigma_tot_e[energy_index];
-        }
+        if (gy == 0)
+            phi = (gz > 0) ? 0.5 * Const::PI : -0.5 * Const::PI;
         else
-        {
-            std::cerr << "CollisionHandler: Unknown projectile type: " << projectile.name << std::endl;
-            continue;
-        }
+            phi = atan2(gz, gy);
 
-        double nu = sigma_tot * velocity;
+        chi = acos(1.0 - 2.0 * rnd()); 
+        eta = 2.0 * Const::PI * rnd(); 
 
-        double p_coll = 0.5;//1 - exp(-nu * (domain.DT / domain.W));
+        double st = sin(theta), ct = cos(theta);
+        double sp = sin(phi),   cp = cos(phi);
+        double sc = sin(chi),   cc = cos(chi);
+        double se = sin(eta),   ce = cos(eta);
 
-        if (p_coll > rnd())
-        {
-            part.id  = 1; // Mark particle as colliding
-            //domain.N_pcoll = domain.N_pcoll + 1;
-            // Sample target gas particle velocity from a maxwellian distribution
-            double vxg = Init::SampleVel(target_gas, target_gas.temp);
-            double vyg = Init::SampleVel(target_gas, target_gas.temp);
-            double vzg = Init::SampleVel(target_gas, target_gas.temp);
+        // new relative velocity
+        gx = g * (ct * cc - st * sc * ce);
+        gy = g * (st * cp * cc + ct * cp * sc * ce - sp * sc * se);
+        gz = g * (st * sp * cc + ct * sp * sc * ce + cp * sc * se);
 
-            if (projectile.name == "electron")
-            {
-                display::print("executed electron collision");
-                collision_electron(part.x, part.vx, part.vy, part.vz,energy_index, projectile, target_gas);
-                domain.N_pcoll++;
-                //collision_electron(part.x, part.vx, part.vy, part.vz, energy_index, electron, target_gas);
-            }
-            else if (projectile.name == "ion")
-            {
-                display::print("executed ion collision");
-                collision_ion(part.x, part.vx, part.vy, part.vz, vxg, vyg, vzg, energy_index, projectile, target_gas);
-            }
-
-            else if (projectile.name == "beam" && projectile.charge == -1)
-            {
-                display::print("executed beam collision");
-                collision_detachment(part.x, part.vx, part.vy, part.vz,vxg, vyg, vzg,energy_index, projectile, target_gas, electron_species);
-                part.id = -1; // Mark beam particle for deletion after collision
-        
-            }
-        }
+        double F1 = m2 / (m1 + m2);
+        vx_1 = wx + F1 * gx;
+        vy_1 = wy + F1 * gy;
+        vz_1 = wz + F1 * gz;
     }
+    else  
+    {
+        // Electron detachment 
+        //display::print("detachment!");
+        double g_mag = sqrt(gx * gx + gy * gy + gz * gz);
+        double mu = (m1*m2) / m_total;
+        double E_kin_com = 0.5 * mu * (g_mag * g_mag * domain.vel_norm * domain.vel_norm); 
 
-    // Remove particles marked for deletion
-    projectile.part_list.erase(std::remove_if(projectile.part_list.begin(), projectile.part_list.end(),[](const Particle &p) { return p.id == -1; }),projectile.part_list.end());
-}*/
+        double E_th_det = 2.25 * Const::eV; // threshold
+        if (E_kin_com < E_th_det) return;   // not enough energy
 
+        double E_available = E_kin_com - E_th_det;
+        double E_electron_ej = 0.0;  // simple model
+        double v_e_com = sqrt(2.0 * E_electron_ej / Const::ME);
+
+        double chi = acos(1.0 - 2.0 * rnd()); 
+        double eta = 2.0 * Const::PI * rnd();
+
+        double sc = sin(chi), cc = cos(chi);
+        double se = sin(eta), ce = cos(eta);
+
+        double ve_com_x = v_e_com * sc * ce;
+        double ve_com_y = v_e_com * sc * se;
+        double ve_com_z = v_e_com * cc;
+
+        electron_species.AddParticle(Particle(xe, (wx + ve_com_x / domain.vel_norm),(wy + ve_com_y / domain.vel_norm),(wz + ve_com_z / domain.vel_norm),1, NAN, species1.defaultspwt));
+    }
+}
 
 
 void CollisionHandler::handle_collisions(Species &projectile, Species &target_gas, Species &electron_species)
@@ -477,11 +441,11 @@ void CollisionHandler::handle_collisions(Species &projectile, Species &target_ga
         {
             sigma_tot = sigma_tot_e[energy_index];
         }
-        else if (projectile.name == "ion")
+        else if (projectile.name == "ion" && projectile.charge > 0) //species name are hardcoded
         {
             sigma_tot = sigma_tot_pion[energy_index];
         }
-        else if (projectile.name == "beam" || projectile.name == "negion") // && projectile.charge == -1
+        else if ((projectile.name == "beam" || projectile.name == "negion") && projectile.charge < 0) // && projectile.charge == -1
         {
             sigma_tot = sigma_tot_nion[energy_index]; // or sigma_tot_e if desired
         }
@@ -500,21 +464,19 @@ void CollisionHandler::handle_collisions(Species &projectile, Species &target_ga
 
             if (projectile.name == "electron" || projectile.name == "ebeam") // species name are hardcoded
             {
-                //display::print("executed electron collision");
                 collision_electron(part.x, part.vx, part.vy, part.vz, energy_index, projectile, target_gas);
                 domain.N_ecoll++;
             }
-            else if (projectile.name == "ion")
+            else if (projectile.name == "ion" && projectile.charge > 0)
             {
-                //display::print("executed ion collision");
-                collision_ion(part.x, part.vx, part.vy, part.vz, vxg, vyg, vzg, energy_index, projectile, target_gas);
+                collision_pion(part.x, part.vx, part.vy, part.vz, vxg, vyg, vzg, energy_index, projectile, target_gas);
                 domain.N_ioncoll++;
             }
-            else if (projectile.name == "beam" || projectile.name == "negion")
+            else if ((projectile.name == "beam" || projectile.name == "negion") && projectile.charge < 0) //negative beam and negative ion
             {
-                //display::print("executed beam collision");
-                collision_detachment(part.x, part.vx, part.vy, part.vz,vxg, vyg, vzg, energy_index, projectile, target_gas, electron_species);
-                // erase this particle immediately
+    
+                collision_nion(part.x, part.vx, part.vy, part.vz,vxg, vyg, vzg, energy_index, projectile, target_gas, electron_species);
+                //erase this particle
                 it = projectile.part_list.erase(it);
                 continue; // skip ++it, since erase returns next element
                 domain.N_negioncoll++;
@@ -623,3 +585,55 @@ void CollisionHandler::coll_rate(Species &projectile, Species &target_gas)
         domain.Scatter(part.x, coll_rate, projectile.coll_rate);
     }
 }
+
+
+/*
+void CollisionHandler::collision_detachment(double xe, double &vx_1, double &vy_1, double &vz_1, double &vx_2, double &vy_2, double &vz_2, 
+    int eindex, Species &species1, Species &species2, Species &electron_species)
+{
+    // Relative velocity (g) and center-of-mass velocity (w)
+    double gx = vx_1 - vx_2;
+    double gy = vy_1 - vy_2;
+    double gz = vz_1 - vz_2;
+    double g_mag = sqrt(gx * gx + gy * gy + gz * gz);
+
+    double m1 = species1.defaultmass;
+    double m2 = species2.defaultmass;
+    double m_total = m1 + m2;
+    
+    double wx = (vx_1 * m1 + vx_2 * m2) / m_total;
+    double wy = (vy_1 * m1 + vy_2 * m2) / m_total;
+    double wz = (vz_1 * m1 + vz_2 * m2) / m_total;
+
+    double E_th_det = 2.25 * Const::eV; // Detachment threshold energy in Joules
+    
+    double E_kin_com = 0.5 * ((m1*m2)/m_total) * (g_mag * g_mag * domain.vel_norm * domain.vel_norm); //reduced mass in COM frame
+
+    if (E_kin_com < E_th_det) return; // Not enough energy, no collision
+
+    double E_available = E_kin_com - E_th_det;
+
+    // Simple model for energy sharing
+    double E_electron_ej = 0;//E_available * (1.0 - sqrt(rnd()));
+
+    double v_e_com = sqrt(2.0 * E_electron_ej / Const::ME);
+
+    // Isotropic scattering: generate random angles for the new particles.
+    double chi = acos(1.0 - 2.0 * rnd()); 
+    double eta = 2.0 * Const::PI * rnd();
+
+    double sc = sin(chi);
+    double cc = cos(chi);
+    double se = sin(eta);
+    double ce = cos(eta);
+ 
+    // Velocity components for the new electron in COM frame
+    double ve_com_x = v_e_com * sc * ce;
+    double ve_com_y = v_e_com * sc * se;
+    double ve_com_z = v_e_com * cc;
+
+    electron_species.AddParticle(Particle(xe, (wx + ve_com_x / domain.vel_norm),(wy + ve_com_y / domain.vel_norm),(wz + ve_com_z / domain.vel_norm),1,NAN,species1.defaultspwt));
+    //display::print("executed detachment collision");
+    
+}
+*/

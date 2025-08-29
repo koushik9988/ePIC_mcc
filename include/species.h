@@ -189,6 +189,11 @@ class Species
 };
 
 
+/**
+ * @struct SpeciesParams
+ * @brief Structure to hold parameters for initializing a species.
+ */
+/// @brief
 struct SpeciesParams
 {
     string name;

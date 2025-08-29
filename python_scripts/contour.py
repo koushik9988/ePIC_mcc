@@ -11,8 +11,6 @@ import h5py
 import matplotlib.animation as animation
 import scipy.integrate as intg
 
-
-
 file_name = 'result.h5'
 path = sys.argv[1]
 output_dir = './plots'
@@ -62,7 +60,7 @@ iden = np.empty(shape=(DATA_TS, NC))
 
 # ------------------------------------------------------
 for i, time_step in enumerate(time_steps):
-        phi = f['fielddata/coll_rate_electron/' + str(time_step)]
+        phi = f['fielddata/coll_rate_ion/' + str(time_step)]
         x = np.linspace(0,NC,len(phi))
         pot[i, :] = phi
         EF  = f['fielddata/efield/' + str(time_step)]

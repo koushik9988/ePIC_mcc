@@ -87,6 +87,9 @@ void Domain::display(vector<Species> &species)
     display::print("  Elastic Collision:   ", enable_elastic_collision ? "Enabled" : " Disabled");
     display::print("  Excitation Collision:", enable_excitation_collision ? "Enabled" : " Disabled");
     display::print("  Ionization Collision:", enable_ionization_collision ? "Enabled" : " Disabled");
+    display::print(" pion_elastic_collision:", enable_pion_elastic ? "Enabled" : " Disabled");
+    display::print(" nion_elastic_collision:", enable_nion_elastic ? "Enabled" : " Disabled");
+    display::print("  Detachment Collision:", enable_e_detach_collision ? "Enabled" : " Disabled");
     display::print("  maximum electron collision frequency:", max_electron_coll_freq);
     display::print("  \u03BD * DT :",max_electron_coll_freq*(DT/wpe));
 
