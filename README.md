@@ -57,10 +57,10 @@ project_root/
     mkdir build && cd build
     ```
     ```bash
-    cmake ..
+    cmake ..                       # Normal build
     ```
     ```bash
-   cmake -DENABLE_PLOTTING=ON ..   # build with runtime visualization using matplotcpp
+   cmake -DENABLE_PLOTTING=ON ..   # build with runtime visualization using matplotlibcpp
     ```
     ```bash
     cmake --build .
