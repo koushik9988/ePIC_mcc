@@ -347,15 +347,7 @@ int main( int argc , char *argv[])
 
     if(domain.GAS_TYPE == "H")
     {
-        if(domain.enable_pion_elastic)
-        {
-            ElectronNeutralCollision = new CollisionHandler(domain, HYDROGEN);
-        }
-        else
-        {
-            ElectronNeutralCollision = new CollisionHandler(domain, HYDROGEN, "../cross_section");
-        }
-        
+    	ElectronNeutralCollision = new CollisionHandler(domain, HYDROGEN, "../cross_section");
     }
     else if(domain.GAS_TYPE == "AR")
     {
