@@ -167,8 +167,8 @@ The `input.ini` file contains parameters for configuring the simulation. Each se
 | Parameter | Description |
 |----------|-------------|
 | `B` | Magnitude of magnetic field|
-| `theta` | Polar angle `0 - PI`|
-| `azimuth` | Azimuthal angle `0-2*PI`|
+| `theta` | Polar angle (`0 - PI`)|
+| `azimuth` | Azimuthal angle (`0 - 2*PI`)|
 
 
 
