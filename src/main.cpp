@@ -399,7 +399,7 @@ int main( int argc , char *argv[])
     output.coll_freq_plot = 0;
     #endif
     output.write_metadata(ni, NUM_TS, write_interval, write_interval_phase, DT_coeff, den, save_fig, domain.normscheme,
-    domain.sub_cycle_interval, LDe, LDi, wpe, wpi, species_no, GAS_DENSITY, domain.max_electron_coll_freq);
+    domain.sub_cycle_interval, LDe, LDi, wpe, wpi, species_no, GAS_DENSITY, domain.max_electron_coll_freq, domain.B, domain.theta, domain.azimuth);
     output.write_species_metadata(species_list);
     
     //experimental
