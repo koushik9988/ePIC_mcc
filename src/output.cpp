@@ -43,7 +43,7 @@ Output::Output(const std::filesystem::path& outputfolder, Domain& domain) : outp
 
 //-------
 void Output::write_metadata(int NC, int NUM_TS, int write_int, int write_int_phase, double DT, double density, int save_fig, int normscheme, 
-    int subcycleint, double LDe, double LDi, double wpe, double wpi,int spno, double GAS_DENSITY, double max_electron_collision_freq)
+    int subcycleint, double LDe, double LDi, double wpe, double wpi,int spno, double GAS_DENSITY, double max_electron_collision_freq, double B, double theta, double azimuth)
 {
     // Write metadata attributes within the metadata group
     //Group metadata_group = file.openGroup("/metadata");
@@ -64,6 +64,9 @@ void Output::write_metadata(int NC, int NUM_TS, int write_int, int write_int_pha
     metadata_group.createAttribute("spno", PredType::NATIVE_INT, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_INT, &spno);
     metadata_group.createAttribute("GAS_DENSITY", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &GAS_DENSITY);
     metadata_group.createAttribute("max_ele_coll_freq", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &max_electron_collision_freq);
+    metadata_group.createAttribute("B", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &B);
+    metadata_group.createAttribute("theta", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &theta);
+    metadata_group.createAttribute("azimuth", PredType::NATIVE_DOUBLE, DataSpace(H5S_SCALAR)).write(PredType::NATIVE_DOUBLE, &azimuth);
     metadata_group.close();
 }
 
