@@ -304,8 +304,8 @@ for(int i = 2; i < species_no; i++)
     ```
 
 ## Contributors
-- [Rakesh Moulick](https://github.com/rakeshmoulick)
 - [Kaushik Kalita](https://github.com/koushik9988)
+- [Rakesh Moulick](https://github.com/rakeshmoulick)
   
 
 
