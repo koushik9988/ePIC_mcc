@@ -41,7 +41,7 @@ project_root/
 ```
 
 
-### Installation
+## Installation (LINUX Distro)
 1. Clone the repository:
     ```bash
     git clone https://github.com/koushik9988/ePIC_mcc.git
@@ -65,8 +65,53 @@ project_root/
     ```bash
     cmake --build .
     ```
+## Installation (Windows)
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/koushik9988/ePIC_mcc.git
+    ```
+2. Navigate to the directory:
+    ```bash
+    cd ePIC_mcc
+    ```
 
-### Running the Code
+3. Build the code using cmake for MinGW:
+    ```bash
+    mkdir build && cd build
+    ```
+    ```bash
+    cmake -G "MinGW Makefiles" ..          
+    ```
+    ```bash
+    cmake --build .
+    ```
+
+#### MinGW
+1. Open MSYS2 UCRT64 shell
+2. Upgrade MinGW 
+  ```bash
+   pacman -Syu
+  ```
+4. Install All dependency in MinGW
+```bash
+
+pacman -S --needed \
+mingw-w64-ucrt-x86_64-gcc \
+mingw-w64-ucrt-x86_64-cmake \
+mingw-w64-ucrt-x86_64-make \
+mingw-w64-ucrt-x86_64-hdf5 \
+mingw-w64-ucrt-x86_64-fftw \
+mingw-w64-ucrt-x86_64-python \
+mingw-w64-ucrt-x86_64-python-numpy
+
+```
+5. For runtime visualization Add Python to PATH (needed for matplotlibcpp)
+```bash
+export PATH="/c/Users/<YOUR_USERNAME>/AppData/Local/Programs/Python/Python312:$PATH"
+```
+
+
+## Running the Code
 1. Configure the simulation parameters in the `input.ini` file.
 2. Run the code:
 The executble will be located in the build directory after building with cmake.
