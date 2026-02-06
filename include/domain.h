@@ -186,7 +186,7 @@ class Domain
     double ComputePE(Species &species);
 
     /// @brief structures to hold density value for each cpu threads .
-    std::vector<vec<double>> buffers;
+    //std::vector<vec<double>> buffers;
 
     void filter(vec<double> &field);
 

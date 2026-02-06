@@ -16,6 +16,14 @@ Domain::Domain(double x0, double dx, int ni):x0(x0), dx(dx), ni(ni)
     dft_k = vec<double>((ni/2) +1);
     dft_value = vec<double>((ni/2) +1);
     xL = (ni-1)*dx;
+
+
+    ///new test
+    //buffers.resize(num_threads);
+    //for(int i = 0; i < num_threads; i++)
+    //{
+        //buffers.emplace_back(ni);
+    //}
 }
 
 

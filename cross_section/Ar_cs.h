@@ -19,4 +19,9 @@ double compute_elastic_CS_ar(double energy, Domain &domain);      // Elastic cro
 double compute_excitation_CS_ar(double energy, Domain &domain);   // Excitation cross-section
 double compute_ionization_CS_ar(double energy, Domain &domain);   // Ionization cross-section
 
+
+double compute_iso_CS_ar_ion(double energy, Domain &domain);      // Isotropic elastic scattering cross-section
+double compute_back_CS_ar_ion(double energy, Domain &domain);     // Backward elastic scattering cross-section
+
+
 #endif  // _CROSS_SECTIONS_H_

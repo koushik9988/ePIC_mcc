@@ -15,7 +15,10 @@ CollisionHandler::CollisionHandler(Domain &domain, int gas, const char* data_pat
     sigma_ionz.resize(CS_RANGES, 0.0);
     sigma_mex_pion.resize(CS_RANGES, 0.0);
     sigma_mex_nion.resize(CS_RANGES,0.0);
-    sigma_e_detach.resize(CS_RANGES,0.0); 
+    sigma_e_detach.resize(CS_RANGES,0.0);
+    
+    sigma_iso_ar_ion.resize(CS_RANGES, 0.0);
+    sigma_back_ar_ion.resize(CS_RANGES, 0.0);
 
     if (gas == HYDROGEN)
     {
@@ -36,11 +39,23 @@ CollisionHandler::CollisionHandler(Domain &domain, int gas) : domain(domain), ga
     sigma_mex_pion.resize(CS_RANGES, 0.0);
     sigma_mex_nion.resize(CS_RANGES,0.0);
     sigma_e_detach.resize(CS_RANGES,0.0); 
+
+    sigma_iso_ar_ion.resize(CS_RANGES, 0.0);
+    sigma_back_ar_ion.resize(CS_RANGES, 0.0);
 }
 
 
 void CollisionHandler::set_electron_cross_sections()
 {
+    
+    
+    /*
+    * Pre-calculate electron cross-sections for a range of energies (DE_CS, 2*DE_CS, ..., DE_CS*(CS_RANGES-1)) i.e index*DE_CS = energy
+    * Store in sigma_ela, sigma_exc, sigma_ionz
+    * Use std::transform with a lambda to fill the vectors based on the selected gas type
+    * later index is found as index = energy/DE_CS to retrieve the appropriate cross-section during collision handling
+    */
+
     std::vector<double> energy(CS_RANGES);
     energy[0] = DE_CS;
     std::generate(energy.begin() + 1, energy.end(), [i = 1]() mutable { return DE_CS * (i++); });
@@ -67,12 +82,35 @@ void CollisionHandler::set_electron_cross_sections()
 
 void CollisionHandler::set_pion_cross_sections() // changes function name later to ion instead of pion
 {
+    /*
+    * 
+    * For equal-mass collisions (Ar+ / Ar or H+ / H):
+    * Simulation uses CENTER-OF-MASS (COM) frame energy = 1/2 reduced mass * relative velocity^2
+    * Cross sections (Phelps) are measured in LABORATORY frame energy
+    * Relationship: E_lab = 2 * E_COM   (E_lab = 1/2 m v^2, E_COM = 1/2 (m/2) v^2 for equal masses)
+    * So Lab energy is twice the COM energy for equal-mass collisions
+    * Build cross section array with 2*DE_CS spacing (lab energies)
+    * Index with regular energy/DE_CS (COM energies)
+    * Retrieves correct lab-frame cross section
+    * 
+    * Example: Ar Ion projectile with E_COM = 5 eV and DE_CS = 0.005 eV
+    * So array Index = 5.0/0.005 = 1000
+    * Which Retrieves sigma[1000]  so eneg is 1000*DE_CS = 5.0 eV in lab frame, which is incorrect as it should be twice
+    * So we build the array with 2*DE_CS spacing, so index 1000 corresponds to energy = 1000*2*DE_CS = 10 eV in lab frame, which is correct for 5 eV COM energy
+    */
 
     std::vector<double> energy(CS_RANGES);
-    energy[0] = DE_CS;
-    std::generate(energy.begin() + 1, energy.end(), [i = 1]() mutable { return DE_CS * (i++); });
+    energy[0] = 2*DE_CS;
+    std::generate(energy.begin() + 1, energy.end(), [i = 1]() mutable { return 2*DE_CS * (i++); });
 
-    if (gas == HYDROGEN)
+
+    if (gas == ARGON)
+    {        
+        std::transform(energy.begin(), energy.end(), sigma_iso_ar_ion.begin(),[this](double energy_val) { return compute_iso_CS_ar_ion(energy_val, domain); });
+        std::transform(energy.begin(), energy.end(), sigma_back_ar_ion.begin(),[this](double energy_val) { return compute_back_CS_ar_ion(energy_val, domain); });
+    }
+
+    else if (gas == HYDROGEN)
     {
         std::transform(energy.begin(), energy.end(), sigma_mex_pion.begin(),[this](double energy_val) { return compute_mex_cs_pion(energy_val, domain); });
         std::transform(energy.begin(), energy.end(), sigma_mex_nion.begin(),[this](double energy_val) { return compute_mex_cs_nion(energy_val, domain); });
@@ -92,8 +130,15 @@ void CollisionHandler::calc_total_cross_sections()
     for (size_t i = 0; i < CS_RANGES; ++i)
     {
         sigma_tot_e[i] = (sigma_ela[i] + sigma_exc[i] + sigma_ionz[i]) * domain.GAS_DENSITY;
-        sigma_tot_pion[i] = (sigma_mex_pion[i]) * domain.GAS_DENSITY;
-        sigma_tot_nion[i] = (sigma_e_detach[i] + sigma_mex_nion[i]) * domain.GAS_DENSITY;
+        if (gas == ARGON)
+        {
+            sigma_tot_pion[i] = (sigma_iso_ar_ion[i] + sigma_back_ar_ion[i]) * domain.GAS_DENSITY;
+        }
+        else if (gas == HYDROGEN)
+        {
+            sigma_tot_pion[i] = (sigma_mex_pion[i]) * domain.GAS_DENSITY;
+            sigma_tot_nion[i] = (sigma_e_detach[i] + sigma_mex_nion[i]) * domain.GAS_DENSITY;
+        }
     }
 }
 
@@ -271,7 +316,7 @@ void CollisionHandler::collision_pion(double xe, double &vx_1, double &vy_1, dou
      int eindex, Species &species1, Species &species2)
 {
     double   g,gx,gy,gz,wx,wy,wz;
-    double   theta,phi,chi,eta,st,ct,sp,cp,sc,cc,se,ce,t;
+    double   theta,phi,chi,eta,st,ct,sp,cp,sc,cc,se,ce,t1,t2;
     
     // calculate relative velocity before collision
     // random Maxwellian target atom already selected (vx_2,vy_2,vz_2 velocity components of target atom come with the call)
@@ -311,15 +356,46 @@ void CollisionHandler::collision_pion(double xe, double &vx_1, double &vy_1, dou
     }
 
     // determine the type of collision based on cross sections and generate scattering angle
-
-    t  = sigma_mex_pion[eindex];
     
-    if  (rnd() < 1) // 1 because we only considered only one type of process(elastic)
-    {                                 
-        chi = acos(1.0 - 2.0 * rnd()); 
-        eta = 2 * Const::PI * rnd();                
-    } 
-                               
+
+    //t  = sigma_mex_pion[eindex];
+    
+    //if  (rnd() < 1) // 1 because we only considered only one type of process(elastic)
+    //{                                 
+    //    chi = acos(1.0 - 2.0 * rnd()); 
+    //    eta = 2 * Const::PI * rnd();                
+    //}
+    
+    if (gas == ARGON)
+    {
+        t1 = sigma_iso_ar_ion[eindex];
+        t2 = t1 + sigma_back_ar_ion[eindex];
+        
+        double rnd_val = rnd();
+        if (rnd_val < (t1 / t2))
+        {
+            // Isotropic scattering
+            chi = acos(1.0 - 2.0 * rnd());
+            //display::print("ISO");    
+        }
+        else
+        {
+            // Backward scattering
+            chi = Const::PI;
+        }
+        eta = 2.0 * Const::PI * rnd();
+    }
+    else if (gas == HYDROGEN)
+    {
+        // For Hydrogen: only isotropic elastic scattering
+        if (rnd() < 1) // 1 because we only considered only one type of process(elastic)
+        {                                 
+            chi = acos(1.0 - 2.0 * rnd()); 
+            eta = 2 * Const::PI * rnd();                
+        } 
+     
+    }
+
     sc  = sin(chi);
     cc  = cos(chi);
     se  = sin(eta);

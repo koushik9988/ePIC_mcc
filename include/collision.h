@@ -63,6 +63,13 @@ class CollisionHandler
     /// cross section for electron detachment from a negative ion
     cross_section sigma_e_detach;
     
+
+    /// Argon ion isotropic elastic scattering cross section
+    cross_section sigma_iso_ar_ion;
+    /// Argon ion backward elastic scattering cross section
+    cross_section sigma_back_ar_ion;
+
+
     public:
     /// type of background gas
     int gas;

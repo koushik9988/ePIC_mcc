@@ -42,6 +42,7 @@ class Particle
     double pvx,pvy,pvz;
 
     int id; //particle id
+    bool alive; //flag to track if particle is alive (true) or hit boundary (false)
     //particle constructor
     Particle(double x, double vx, double vy, double vz, int id, double mass = NAN , double spwt = NAN)
     {
@@ -55,6 +56,7 @@ class Particle
         this->id = id; //default id
         this->mass = mass;
         this->spwt = spwt;
+        this->alive = true; //particle starts alive
     }
 
 };
@@ -105,6 +107,8 @@ class Species
     vector<Particle> part_list;
 
     vec<double> velprev;
+
+    std::vector<vec<double>> local_buffers;
 
 
     //vector<vec<double>> buffers;
