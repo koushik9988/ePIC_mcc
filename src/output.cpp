@@ -1051,3 +1051,95 @@ void Output::write_dump_file(const std::filesystem::path& dump_path,int ts,std::
 
 }
 ////
+
+
+void Output::write_heating_data(int ts, Species& species)
+{
+    std::string subgroup_name = "heating_" + species.name;
+    
+    Group heating_subgroup;
+    
+    // Check if the group already exists in the map
+    auto it = heating_subgroups.find(species.name);
+    if (it != heating_subgroups.end()) 
+    {
+        // Group already exists, retrieve it from the map
+        heating_subgroup = it->second;
+    }
+    else 
+    {
+        // Group doesn't exist, create it and store it in the map
+        heating_subgroup = field_data_group.createGroup(subgroup_name);
+        heating_subgroups[species.name] = heating_subgroup;
+    }
+    
+    hsize_t ni = domain.ni;
+    hsize_t dims_heating[1] = {ni};
+    hsize_t Rank = 1;
+    
+    DataSpace dataspace_heating(Rank, dims_heating);
+    
+    H5::DataSet dataset_heating = heating_subgroup.createDataSet(
+        std::to_string(ts), 
+        H5::PredType::NATIVE_DOUBLE, 
+        dataspace_heating
+    );
+    
+    // Prepare data buffer
+    std::vector<double> heating(ni);
+    
+    // Copy heating rate data to buffer
+    for (int i = 0; i < ni; ++i) 
+    {
+        heating[i] = species.power_rate(i);
+    }
+    
+    // Write the heating data to the dataset
+    dataset_heating.write(heating.data(), H5::PredType::NATIVE_DOUBLE);
+}
+
+
+void Output::write_current_density_data(int ts, Species& species)
+{
+    std::string subgroup_name = "current_" + species.name;
+    
+    Group current_subgroup;
+    
+    // Check if the group already exists in the map
+    auto it = heating_subgroups.find(species.name + "_current");
+    if (it != heating_subgroups.end()) 
+    {
+        // Group already exists, retrieve it from the map
+        current_subgroup = it->second;
+    }
+    else 
+    {
+        // Group doesn't exist, create it and store it in the map
+        current_subgroup = field_data_group.createGroup(subgroup_name);
+        heating_subgroups[species.name + "_current"] = current_subgroup;
+    }
+    
+    hsize_t ni = domain.ni;
+    hsize_t dims_current[1] = {ni};
+    hsize_t Rank = 1;
+    
+    DataSpace dataspace_current(Rank, dims_current);
+    
+    H5::DataSet dataset_current = current_subgroup.createDataSet(
+        std::to_string(ts), 
+        H5::PredType::NATIVE_DOUBLE, 
+        dataspace_current
+    );
+    
+    // Prepare data buffer
+    std::vector<double> current(ni);
+    
+    // Copy current density data to buffer
+    for (int i = 0; i < ni; ++i) 
+    {
+        current[i] = species.current_density(i);
+    }
+    
+    // Write the current density data to the dataset
+    dataset_current.write(current.data(), H5::PredType::NATIVE_DOUBLE);
+}

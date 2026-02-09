@@ -510,6 +510,7 @@ int main( int argc , char *argv[])
 		{
 			sp.ScatterSpecies();
             sp.ScatterVel_serial();
+            sp.ComputeCurrentDensity();
 		}
 
 
@@ -519,6 +520,11 @@ int main( int argc , char *argv[])
 
 
         fieldsolver.CalculateEfield();
+
+        for (auto &sp : species_list)
+        {
+            sp.ComputeHeatingRate();
+        }
 
         //---------particle-mover-------------------------------------------- 
         for (Species &sp:species_list)
@@ -571,6 +577,8 @@ int main( int argc , char *argv[])
                 {
                     output.write_den_data(ts,sp);
                     output.write_collrate_data(ts,sp);
+                    output.write_heating_data(ts, sp);
+                    output.write_current_density_data(ts, sp);
                     output.write_vel_data(ts,sp);
                     double temp_avg_coll_freq = ElectronNeutralCollision->average_collision_frequency(sp);///
                     temp_avg_coll_freq = temp_avg_coll_freq/domain.W;

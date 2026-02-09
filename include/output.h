@@ -47,6 +47,9 @@ class Output
     std::map<std::string, Group> vel_subgroups;
     std::map<std::string, Group> collrate_subgroups;
 
+    std::map<std::string, Group> heating_subgroups;
+    std::map<std::string, Group> current_subgroups;
+
     /**
      * @brief Constructor for the Output class.
      * @param outputfolder Path to the output directory.
@@ -147,6 +150,9 @@ class Output
     void write_avg_coll_freq();
 
     void write_dump_file(const std::filesystem::path& dump_path,int ts,std::vector<Species>& species_list);
+
+    void write_heating_data(int ts, Species& species);
+    void write_current_density_data(int ts, Species& species);
 
 
     ///data structure to temporarily store kinetic energy and momentum data.

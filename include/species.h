@@ -83,6 +83,9 @@ class Species
     /// @brief density
     vec<double> den;
     vec<double> velmesh;
+
+    vec <double> current_density;
+    vec <double> power_rate;
     /// @brief no of simulation particle
     int numparticle;
     /// @brief 
@@ -187,6 +190,9 @@ class Species
     bool IsIon();
 
     void ScatterVel_serial();
+
+    void ComputeCurrentDensity();
+    void ComputeHeatingRate();
 
     private:
     Domain &domain;  

@@ -22,6 +22,8 @@ Species::Species(string name, double defaultmass, double charge, double defaults
     coll_rate = vec<double>(domain.ni);
 
     velmesh = vec<double>(domain.ni);
+    power_rate = vec<double>(domain.ni);
+    current_density = vec<double>(domain.ni);  
     
     //velprev = vec<double>(numparticle);
 
@@ -665,4 +667,40 @@ bool Species::IsIon()
     {return true;}
     else
     {return false;}
+}
+
+
+void Species::ComputeCurrentDensity()
+{
+    //Reset current density to zero
+    current_density = 0;
+    
+    //Calculate current density at each grid point: j = q * n * v
+    //where:
+    //q = charge of the species
+    //n = number density at grid point (den)
+    //v = mean velocity at grid point (velmesh)
+    
+    for (int i = 0; i < domain.ni; i++)
+    {
+        // Current density = charge * density * velocity * unnorm 
+        current_density(i) = charge * den(i) * velmesh(i) * domain.density * domain.vel_norm;
+    }
+}
+
+void Species::ComputeHeatingRate()
+{
+    // Reset heating rate to zero
+    power_rate = 0;
+    
+    //Calculate heating rate at each grid point: P = j * E
+    //where:
+    //j = current density at grid point (current_density)
+    //E = electric field at grid point (domain.ef)
+    
+    for (int i = 0; i < domain.ni; i++)
+    {
+        // Heating rate (power absorption) = current density * electric field
+        power_rate(i) = current_density(i) * domain.ef(i) * ((domain.density * Const::QE * domain.L) / Const::EPS_0);
+    }
 }
