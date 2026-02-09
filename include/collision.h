@@ -138,7 +138,7 @@ class CollisionHandler
      * @param eindex Energy index to select appropriate cross section.
      * @note This function may erase the projectile particle from its species list if detachment occurs
      */
-    void collision_nion(double xe, double &vx_1, double &vy_1, double &vz_1,double &vx_2, double &vy_2, double &vz_2, int eindex, Species &species1, Species &species2, Species &electron_species);
+    bool collision_nion(double xe, double &vx_1, double &vy_1, double &vz_1,double &vx_2, double &vy_2, double &vz_2, int eindex, Species &species1, Species &species2, Species &electron_species);
     /**
      * @brief function to process collisions for all particles in the projectile species against the background gas.
      * @param projectile species undergoing collisions (e.g., electron, ion).

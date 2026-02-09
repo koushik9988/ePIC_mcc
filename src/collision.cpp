@@ -421,7 +421,7 @@ void CollisionHandler::collision_pion(double xe, double &vx_1, double &vy_1, dou
 
 
 
-void CollisionHandler::collision_nion(double xe, double &vx_1, double &vy_1, double &vz_1,double &vx_2, double &vy_2, double &vz_2, 
+bool CollisionHandler::collision_nion(double xe, double &vx_1, double &vy_1, double &vz_1,double &vx_2, double &vy_2, double &vz_2, 
     int eindex, Species &species1, Species &species2, Species &electron_species)
 {
     double gx = vx_1 - vx_2;
@@ -472,6 +472,7 @@ void CollisionHandler::collision_nion(double xe, double &vx_1, double &vy_1, dou
         vx_1 = wx + F1 * gx;
         vy_1 = wy + F1 * gy;
         vz_1 = wz + F1 * gz;
+        return false;
     }
     else  
     {
@@ -482,7 +483,7 @@ void CollisionHandler::collision_nion(double xe, double &vx_1, double &vy_1, dou
         double E_kin_com = 0.5 * mu * (g_mag * g_mag * domain.vel_norm * domain.vel_norm); 
 
         double E_th_det = 2.25 * Const::eV; // threshold
-        if (E_kin_com < E_th_det) return;   // not enough energy
+        if (E_kin_com < E_th_det) return false;   // not enough energy
 
         double E_available = E_kin_com - E_th_det;
         double E_electron_ej = 0.0;  // simple model
@@ -499,20 +500,40 @@ void CollisionHandler::collision_nion(double xe, double &vx_1, double &vy_1, dou
         double ve_com_z = v_e_com * cc;
 
         electron_species.AddParticle(Particle(xe, (wx + ve_com_x / domain.vel_norm),(wy + ve_com_y / domain.vel_norm),(wz + ve_com_z / domain.vel_norm),1, NAN, species1.defaultspwt));
+        return true;
     }
 }
 
-
 void CollisionHandler::handle_collisions(Species &projectile, Species &target_gas, Species &electron_species)
 {
-    for (auto it = projectile.part_list.begin(); it != projectile.part_list.end(); )
+    size_t i = 0;
+    //for (auto it = projectile.part_list.begin(); it != projectile.part_list.end(); )
+    while(i < projectile.part_list.size())
     {
-        Particle &part = *it;
+        //Particle &part = *it;
+        Particle &part = projectile.part_list[i];
 
         double v_sqr = (part.vx * part.vx + part.vy * part.vy + part.vz * part.vz) * domain.vel_norm * domain.vel_norm;
         double velocity = sqrt(v_sqr);
         double energy   = (0.5 * projectile.defaultmass * v_sqr) / Const::eV;
-        int energy_index = std::min(static_cast<int>(energy / DE_CS + 0.5), static_cast<int>(CS_RANGES) - 1);
+
+
+        //out of bound checks
+        if (!std::isfinite(energy) || energy < 0.0)
+        {
+            energy = 0.0;
+        }
+            
+        //int energy_index = std::min(static_cast<int>(energy / DE_CS + 0.5), static_cast<int>(CS_RANGES) - 1);
+
+        /*
+        * clamp is defined in <algorithm> stdc++17
+        * clamp(value,lower_bound, upper_bpund) => if value > upper_bound return = upper_bound
+        * clamp(value,lower_bound, upper_bpund) => if value < lower_bound return = lower_bound
+        * clamp(value,lower_bound, upper_bpund) => if lower_bound < value < upper_bound return = value
+        */
+        
+        int energy_index = std::clamp(static_cast<int>(energy / DE_CS + 0.5),0,static_cast<int>(CS_RANGES)-1);
 
         double sigma_tot = 0.0;
         if (projectile.name == "electron" || projectile.name == "ebeam") //name are hardcoded but may be i can use electron mass and charge as a condition
@@ -532,9 +553,11 @@ void CollisionHandler::handle_collisions(Species &projectile, Species &target_ga
         double nu = sigma_tot * velocity;
         double p_coll = 1 - exp(-nu * (domain.DT / domain.W));
 
+        bool erased = false;
+
         if (p_coll > rnd())
         {
-            it->id = 1;
+            part.id = 1;
             // Maxwellian sample for target velocity
             double vxg = Init::SampleVel(target_gas, target_gas.temp)/ domain.vel_norm; // normalize to lab frame
             double vyg = Init::SampleVel(target_gas, target_gas.temp)/ domain.vel_norm;; //normalize 
@@ -553,15 +576,26 @@ void CollisionHandler::handle_collisions(Species &projectile, Species &target_ga
             else if ((projectile.name == "beam" || projectile.name == "negion") && projectile.charge < 0) //negative beam and negative ion
             {
     
-                collision_nion(part.x, part.vx, part.vy, part.vz,vxg, vyg, vzg, energy_index, projectile, target_gas, electron_species);
-                //erase this particle
-                it = projectile.part_list.erase(it);
-                continue; // skip ++it, since erase returns next element
-                domain.N_negioncoll++;
+                bool detached = collision_nion(part.x, part.vx, part.vy, part.vz,vxg, vyg, vzg, energy_index, projectile, target_gas, electron_species);
+
+                if (detached)
+                {
+                    projectile.part_list.erase(projectile.part_list.begin() + i);
+                    domain.N_negioncoll++;
+                    erased = true;
+                }
             }
         }
 
-        ++it; // move to next particle if not erased
+        /*
+        *If erased is true  then if condion become false so donot increment i index
+        *Computation repeat for same previous i index and reason for this is ,let say part vector is = [a,b,c,d,e..]
+        *let say c is removed then d replaced c location become  = [a,b,d,e,...], earlier c index was 2, now if we increment i by 1 then we direcly 
+        * go to e but d isnot analyzed so we donot increament index when a particle is erased.
+        */
+
+        if (!erased)
+            ++i;
     }
 }
 
@@ -580,8 +614,14 @@ double CollisionHandler::average_collision_frequency(Species &projectile)
         double energy = (0.5 * projectile.defaultmass * v_sqr) / Const::eV;
 
         // Get energy index
-        int energy_index = std::min(static_cast<int>(energy / DE_CS + 0.5), static_cast<int>(CS_RANGES) - 1);
-        //display::print(energy_index);
+        if (!std::isfinite(energy) || energy < 0.0)
+        {
+            energy = 0.0;
+        }
+        int energy_index = std::clamp(static_cast<int>(energy / DE_CS + 0.5),0,static_cast<int>(CS_RANGES)-1);
+
+        //int energy_index = std::min(static_cast<int>(energy / DE_CS + 0.5), static_cast<int>(CS_RANGES) - 1);
+
 
         // Choose correct total cross-section array
         double sigma_tot = 0.0;
@@ -642,7 +682,13 @@ void CollisionHandler::coll_rate(Species &projectile, Species &target_gas)
         double energy = (0.5 * projectile.defaultmass * velocity * velocity) / Const::eV;
 
         // Get energy index
-        int energy_index = std::min(static_cast<int>(energy / DE_CS + 0.5), static_cast<int>(CS_RANGES) - 1);
+        if (!std::isfinite(energy) || energy < 0.0)
+        {
+            energy = 0.0;
+        }
+
+        int energy_index = std::clamp(static_cast<int>(energy / DE_CS + 0.5),0,static_cast<int>(CS_RANGES)-1);
+        //int energy_index = std::min(static_cast<int>(energy / DE_CS + 0.5), static_cast<int>(CS_RANGES) - 1);
 
         // Choose cross section
         double sigma_tot = 0.0;
@@ -666,55 +712,3 @@ void CollisionHandler::coll_rate(Species &projectile, Species &target_gas)
         domain.Scatter(part.x, coll_rate, projectile.coll_rate);
     }
 }
-
-
-/*
-void CollisionHandler::collision_detachment(double xe, double &vx_1, double &vy_1, double &vz_1, double &vx_2, double &vy_2, double &vz_2, 
-    int eindex, Species &species1, Species &species2, Species &electron_species)
-{
-    // Relative velocity (g) and center-of-mass velocity (w)
-    double gx = vx_1 - vx_2;
-    double gy = vy_1 - vy_2;
-    double gz = vz_1 - vz_2;
-    double g_mag = sqrt(gx * gx + gy * gy + gz * gz);
-
-    double m1 = species1.defaultmass;
-    double m2 = species2.defaultmass;
-    double m_total = m1 + m2;
-    
-    double wx = (vx_1 * m1 + vx_2 * m2) / m_total;
-    double wy = (vy_1 * m1 + vy_2 * m2) / m_total;
-    double wz = (vz_1 * m1 + vz_2 * m2) / m_total;
-
-    double E_th_det = 2.25 * Const::eV; // Detachment threshold energy in Joules
-    
-    double E_kin_com = 0.5 * ((m1*m2)/m_total) * (g_mag * g_mag * domain.vel_norm * domain.vel_norm); //reduced mass in COM frame
-
-    if (E_kin_com < E_th_det) return; // Not enough energy, no collision
-
-    double E_available = E_kin_com - E_th_det;
-
-    // Simple model for energy sharing
-    double E_electron_ej = 0;//E_available * (1.0 - sqrt(rnd()));
-
-    double v_e_com = sqrt(2.0 * E_electron_ej / Const::ME);
-
-    // Isotropic scattering: generate random angles for the new particles.
-    double chi = acos(1.0 - 2.0 * rnd()); 
-    double eta = 2.0 * Const::PI * rnd();
-
-    double sc = sin(chi);
-    double cc = cos(chi);
-    double se = sin(eta);
-    double ce = cos(eta);
- 
-    // Velocity components for the new electron in COM frame
-    double ve_com_x = v_e_com * sc * ce;
-    double ve_com_y = v_e_com * sc * se;
-    double ve_com_z = v_e_com * cc;
-
-    electron_species.AddParticle(Particle(xe, (wx + ve_com_x / domain.vel_norm),(wy + ve_com_y / domain.vel_norm),(wz + ve_com_z / domain.vel_norm),1,NAN,species1.defaultspwt));
-    //display::print("executed detachment collision");
-    
-}
-*/
